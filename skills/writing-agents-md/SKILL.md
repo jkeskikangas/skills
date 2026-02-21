@@ -107,6 +107,7 @@ Scan project root for config files. If build configs exist only in subdirectorie
 - `app.json` -> mobile only if `expo` field or `react-native` in deps
 - `volta` in `package.json` -> pinned Node/npm/yarn
 - `config.yaml`/`config.yml` -> Kubernetes if contains `apiVersion` + `kind`; else app config
+- `package.yaml` -> Haskell (hpack) only if `*.cabal` or `stack.yaml` also present; else treat as generic config
 - `Makefile` -> task runner wrapper if targets invoke `npm`/`uv`/`cargo`/`go`/`mix`; else build system
 - `Dockerfile` in multi-service repos -> note each service in Structure with its Dockerfile path
 
@@ -123,6 +124,17 @@ Scan project root for config files. If build configs exist only in subdirectorie
 | `.editorconfig` | respect indent style/size | -- |
 | Pre-commit hooks | -- | `--no-verify` |
 | Mutually exclusive lib in deps | chosen library | replaced alternative |
+| `pom.xml` (no `build.gradle*`) | `mvn` | `gradle` |
+| `build.gradle` or `build.gradle.kts` (no `pom.xml`) | `./gradlew` (if `gradlew` exists) else `gradle` | `mvn` |
+| `project.clj` | `lein` | `clj` |
+| `deps.edn` (no `project.clj`) | `clj` | `lein` |
+| `build.sbt` | `sbt` | `mill` |
+| `build.mill` | `mill` | `sbt` |
+| `stack.yaml` | `stack` | `cabal` |
+| `*.cabal` + `cabal.project` (no `stack.yaml`) | `cabal` | `stack` |
+| `.scalafmt.conf` | `scalafmt` | -- |
+| `.clj-kondo/` | `clj-kondo` | -- |
+| `checkstyle.xml` | `checkstyle` | -- |
 
 **Additional rules:**
 - **Lock file conflict** -> check CI to determine which manager; mandate that one. If unclear, `<!-- REVIEW: conflicting lock files -->`.
@@ -132,6 +144,10 @@ Scan project root for config files. If build configs exist only in subdirectorie
 - **Polyglot (no workspace config)** -> label commands per-stack (e.g., `# install (backend)`). Don't use Monorepo section without orchestration tooling.
 - **Git submodules** -> note paths in Structure.
 - **Unrecognized stacks** -> read README and build config for commands. Do not guess — omit sections with no evidence.
+- **Java coexistence**: When both `pom.xml` and `build.gradle*` present, check CI to determine primary; mandate that one.
+- **Clojure coexistence**: `deps.edn` and `project.clj` can coexist. Prefer CI evidence. If CI is absent or ambiguous: `project.clj` present → `lein`; else `clj`. Add `<!-- REVIEW: verify Clojure build tool -->` if uncertain.
+- **Gradle wrapper**: `gradlew` present -> use `./gradlew` instead of `gradle`.
+- **Haskell coexistence**: `stack.yaml` + `*.cabal` is normal — Stack manages the toolchain; use `stack`.
 
 ### 2. Map Entry Points & Data
 

@@ -35,15 +35,56 @@ Use in Step 4. Only check frameworks whose dependencies were detected in Step 1.
 | Gin | `gin.Default()`, `gin.New()` | `r.GET(`, `c.JSON(`, `gin.Context`, `r.Group(` |
 | Echo | `echo.New()` | `e.GET(`, `echo.Context`, `e.Group(` |
 
+## C# / .NET
+
+| Framework | Entry indicators | Convention patterns |
+|-----------|-----------------|-------------------|
+| ASP.NET Core Minimal API | `app.MapGet(`, `WebApplication.Create` | `builder.Services.Add`, `.AddDbContext<`, `MapPost`, `IEndpointRouteBuilder` |
+| ASP.NET Core MVC | `[ApiController]`, `ControllerBase` | `[HttpGet`, `[HttpPost`, `IActionResult`, `Controllers/`, `[Route(` |
+| ASP.NET Core Razor Pages | `MapRazorPages`, `PageModel` | `Pages/`, `.cshtml`, `OnGet`, `OnPost` |
+
+## Java
+
+| Framework | Entry indicators | Convention patterns |
+|-----------|-----------------|-------------------|
+| Spring Boot | `@SpringBootApplication`, `SpringApplication.run` | `@RestController`, `@Service`, `@Repository`, `@Autowired`, `application.properties` |
+| Quarkus | `@QuarkusMain`, `quarkus.` in config | `@Path(`, `@Inject`, `quarkus.` prefix in `application.properties` |
+| Micronaut | `@MicronautApplication`, `Micronaut.run` | `@Controller`, `@Singleton`, `@Inject`, `micronaut.` in `application.yml` |
+
+## Clojure
+
+| Framework | Entry indicators | Convention patterns |
+|-----------|-----------------|-------------------|
+| Babashka | `bb.edn` only (no `project.clj`/`deps.edn`) | `bb`, `babashka.fs`, `babashka.process`; treat as scripts, not a server framework |
+| Ring/Compojure | `defroutes`, `wrap-`, `make-handler` | `context`, `GET`, `POST`, `ANY` (compojure.core) |
+| Pedestal | `http/create-server`, `::http/routes` | `http/start`, `::http/type`, `route/expand-routes` |
+| Luminus | `mount/start`, `app-routes` | `defroutes`, `layout/render`, `db.core` |
+
+## Scala
+
+| Framework | Entry indicators | Convention patterns |
+|-----------|-----------------|-------------------|
+| Play Framework | `app/controllers/`, `conf/routes` | `Action`, `implicit request`, `Ok(`, `Json.toJson`, `play.api.mvc` |
+| http4s | `HttpRoutes.of`, `EmberServerBuilder` | `case req @ GET ->`, `IO[Response`, `BlazeServerBuilder` (legacy), `HttpApp` |
+| ZIO HTTP | `Http.collect`, `ZServer`, `Server.start` | `ZIO.succeed`, `Route`, `Response.json` |
+
+## Haskell
+
+| Framework | Entry indicators | Convention patterns |
+|-----------|-----------------|-------------------|
+| Servant | `type API =`, `serve`, `Proxy` | `Handler`, `:<|>`, `:>`, `hoistServer`, `ServerT` |
+| Yesod | `mkYesod`, `warpEnv`, `yesodDispatch` | `getHomeR`, `postLoginR`, `defaultLayout`, `hamlet` |
+| Scotty | `scotty`, `scottyApp` | `get`, `post`, `json`, `ActionM`, `status` |
+
 ## Cross-cutting (all ecosystems)
 
 Grep regardless of framework:
 
 | Pattern | Grep indicators |
 |---------|----------------|
-| Error classes | `extends Error`, `class.*Error`, `Exception`, `#[derive(.*Error)]` |
-| Logger setup | `createLogger`, `getLogger`, `Logger.new`, `slog.New`, `tracing::` |
-| Config loading | `dotenv`, `config.get`, `BaseSettings`, `viper.`, `figment::` |
+| Error classes | `extends Error`, `class.*Error`, `Exception`, `#[derive(.*Error)]`, `data.*Exception`, `case class.*extends.*Exception`, `newtype.*Error`, `data.*Error =` |
+| Logger setup | `createLogger`, `getLogger`, `Logger.new`, `slog.New`, `tracing::`, `timbre/`, `com.typesafe.scalalogging`, `katip`, `monad-logger` (source); `log4j`, `SLF4J` (build config deps) |
+| Config loading | `dotenv`, `config.get`, `BaseSettings`, `viper.`, `figment::`, `ConfigFactory.load`, `environ.core`, `aero.core`, `pureconfig`, `tomland` |
 | DI/IoC | `@Injectable`, `@inject`, `wire.Build`, `Depends(`, `Container` |
 | Queue/Worker | `Bull`, `BullMQ`, `Celery`, `Sidekiq`, `Faktory`, `tokio::spawn` |
 | Feature flags | `LaunchDarkly`, `unleash`, `flagsmith`, `feature_flag`, `GrowthBook` |

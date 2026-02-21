@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-02-21
+
+### Changed
+
+- Root README revamped for faster onboarding (quickstart, verification, troubleshooting, and clearer positioning).
+- `@jkeskikangas/skillcheck` README expanded with examples, exit codes, JSON output notes, and CI snippets.
+- CI validation now runs on Linux, macOS, and Windows across Node 18/20/22.
+
 ## [0.1.0] - 2025-02-20
 
 ### Added

@@ -8,10 +8,11 @@ on:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         node-version: [18, 20, 22]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -22,13 +23,16 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install linter
-        run: cd packages/skillcheck && npm ci
+        run: npm ci
+        working-directory: packages/skillcheck
 
       - name: Build linter
-        run: cd packages/skillcheck && npm run build
+        run: npm run build
+        working-directory: packages/skillcheck
 
       - name: Run linter tests
-        run: cd packages/skillcheck && npm test
+        run: npm test
+        working-directory: packages/skillcheck
 
       - name: Validate all skills and rubrics (skillcheck)
         run: node packages/skillcheck/bin/skillcheck.js skills/

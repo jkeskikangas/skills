@@ -1,13 +1,44 @@
 # @jkeskikangas/skillcheck
 
-Linter for agent skill directories.
+Linter for **agent skill directories** (for example `skills/<skill-name>/SKILL.md` + `agents/openai.yaml` + `references/`).
+
+Use it to catch broken links, missing frontmatter, and rubric drift **before** you ship skills to your team or publish them.
+
+- Fast local feedback (`npx @jkeskikangas/skillcheck skills/`)
+- CI-friendly exit codes + optional JSON output (`--format json`)
+- Cross-platform (Node.js 18+, no native deps)
 
 ## Install
 
 ```bash
-npm install -g @jkeskikangas/skillcheck
-# or run without installing
+# Recommended (project devDependency)
+npm install -D @jkeskikangas/skillcheck
+
+# Or run without installing (great for CI / one-offs)
 npx @jkeskikangas/skillcheck skills/
+
+# Or install globally
+npm install -g @jkeskikangas/skillcheck
+```
+
+## Quick start
+
+Lint all skills under `skills/`:
+
+```bash
+skillcheck skills/
+```
+
+Lint a single skill directory:
+
+```bash
+skillcheck skills/<skill-name>
+```
+
+Help:
+
+```bash
+skillcheck --help
 ```
 
 ## Usage
@@ -26,7 +57,7 @@ skillcheck --max-lines 500 skills/    # max allowed SKILL.md lines
 
 - **Frontmatter** — required fields, valid types, schema conformance
 - **Links** — referenced files exist (agents/, references/)
-- **Rubric** — grade bands, P1/P2/P3 priorities, scoring dimensions present
+- **Rubrics** — validates markdown rubrics discovered in `references/*rubric*.md`
 - **openai.yaml** — tool definitions, token budget, safety constraints
 
 ## Example output
@@ -45,6 +76,14 @@ When everything is valid:
 [OK] 4 skills and 2 rubrics valid.
 ```
 
+## Options
+
+- `--format stylish|json` (default: `stylish`)
+- `--max-lines <n>`: max allowed `SKILL.md` lines (default: `500`)
+- `--fix`: auto-fix rubric drift (only applies to rubric checks)
+- `--skills-only`: skip rubric checks
+- `--rubrics-only`: skip skill checks
+
 ## Exit codes
 
 - `0` — no diagnostics found
@@ -59,28 +98,34 @@ Use `--format json` for tooling and CI integrations:
 skillcheck --format json skills/ > skillcheck.json
 ```
 
-The JSON shape matches the schema in this repo: `schemas/lint-output.schema.json`.
+The JSON shape matches the schema in the source repo:
+
+- `schemas/lint-output.schema.json`
+
+Source: https://github.com/jkeskikangas/skills
 
 ## CI (GitHub Actions)
 
-Typical usage in a monorepo:
-
-```yaml
-- name: Install
-  run: cd packages/skillcheck && npm ci
-
-- name: Build
-  run: cd packages/skillcheck && npm run build
-
-- name: Lint skills (repo-local)
-  run: node packages/skillcheck/bin/skillcheck.js skills/
-```
-
-For consumers who just want to lint skills in their own repo:
+Typical consumer usage (no repo checkout needed):
 
 ```yaml
 - name: Lint skills
   run: npx @jkeskikangas/skillcheck skills/
+```
+
+If you vendor `skillcheck` into a monorepo (this package’s own repo layout):
+
+```yaml
+- name: Install
+  run: npm ci
+  working-directory: packages/skillcheck
+
+- name: Build
+  run: npm run build
+  working-directory: packages/skillcheck
+
+- name: Lint skills (repo-local)
+  run: node packages/skillcheck/bin/skillcheck.js skills/
 ```
 
 ## Development
@@ -90,6 +135,10 @@ cd packages/skillcheck && npm ci
 cd packages/skillcheck && npm run build
 cd packages/skillcheck && npm test
 ```
+
+## Related tooling
+
+`skillcheck` focuses on structural validation and rubric consistency. For spec-level portability linting across agents, pair it with `agnix` in CI.
 
 ## License
 

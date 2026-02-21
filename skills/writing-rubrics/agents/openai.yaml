@@ -1,0 +1,4 @@
+interface:
+  display_name: "Writing Rubrics"
+  short_description: "Create or align rubric docs and sync templates/prompts"
+  default_prompt: "Use $writing-rubrics to create or update rubric Markdown files in this repo (and sync reviewer templates/prompts). First discover existing rubrics under `*/references/*rubric*.md`, then propose a minimal change plan and ask for approval before applying multi-file edits. Enforce canonical grade bands, P1/P2/P3 definitions, and evidence-backed verification rules. After edits, run the skillcheck linter and `npx agnix <skill-dir>` for any changed skill directories. For the Phase 2 fresh-context review, use the review prompt at `references/review-prompt.md` and the report template at `references/review-template.md`."

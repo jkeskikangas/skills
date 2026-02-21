@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jkeskikangas/skills/blob/main/schemas/skill-frontmatter.schema.json",
+  "title": "SKILL.md Frontmatter",
+  "description": "Schema for the YAML frontmatter block in a SKILL.md file.",
+  "type": "object",
+  "required": ["name", "description"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 64,
+      "description": "Kebab-case skill identifier. Must not start/end with '-' or contain '--'."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1024,
+      "pattern": "^[^<>]+$",
+      "description": "Short plain-text description. No HTML angle brackets."
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX license identifier (e.g. 'Apache-2.0', 'MIT')."
+    },
+    "compatibility": {
+      "type": "string",
+      "description": "Supported agent platforms (e.g. 'claude-code, cursor, windsurf')."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Arbitrary key-value metadata.",
+      "additionalProperties": true
+    },
+    "allowed-tools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of tool identifiers the skill is allowed to use."
+    }
+  }
+}

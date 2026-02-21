@@ -1,0 +1,4 @@
+interface:
+  display_name: "Writing AGENTS.md"
+  short_description: "Generate or update AGENTS.md (with validation + rubric checks)"
+  default_prompt: "Use $writing-agents-md to generate or update AGENTS.md for the repo at ./ (read-only analysis first). Detect stack/commands/constraints with a small, targeted read budget. Present a short summary and ask for approval before writing. On approval, write AGENTS.md and update/create CLAUDE.md with an @AGENTS.md import (preserve existing custom content per SKILL.md). Validate against the checklist in SKILL.md, then run a rubric self-check using `references/agents-md-rubric.md`; fix P1/P2 issues and keep within the line budget."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Writing Skills"
+  short_description: "Create professional-grade agent skills"
+  default_prompt: "Use $writing-skills to create or update the skill in ./path/to/skill and iterate with $reviewing-skills until it reaches an A- score."

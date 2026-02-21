@@ -1,0 +1,37 @@
+name: Validate Skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install linter
+        run: cd packages/skillcheck && npm ci
+
+      - name: Build linter
+        run: cd packages/skillcheck && npm run build
+
+      - name: Run linter tests
+        run: cd packages/skillcheck && npm test
+
+      - name: Validate all skills and rubrics (skillcheck)
+        run: node packages/skillcheck/bin/skillcheck.js skills/
+
+      - name: Validate all skills (agnix)
+        run: npx agnix skills/

@@ -1,0 +1,32 @@
+{
+  "name": "@jkeskikangas/skillcheck",
+  "version": "0.1.0",
+  "description": "Linter for agent skill directories",
+  "type": "module",
+  "bin": {
+    "skillcheck": "bin/skillcheck.js"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "node bin/skillcheck.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  }
+}

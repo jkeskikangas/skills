@@ -1,0 +1,4 @@
+interface: chat
+display_name: Valid Skill
+short_description: A valid test skill.
+default_prompt: Test prompt.

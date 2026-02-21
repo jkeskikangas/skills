@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jkeskikangas/skills/blob/main/schemas/lint-output.schema.json",
+  "title": "skillcheck JSON Output",
+  "description": "Schema for the JSON output produced by `skillcheck --format json`.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["rule", "message", "file"],
+    "additionalProperties": false,
+    "properties": {
+      "rule": {
+        "type": "string",
+        "description": "Lint rule identifier (e.g. 'name-constraints', 'frontmatter-keys')."
+      },
+      "message": {
+        "type": "string",
+        "description": "Human-readable diagnostic message."
+      },
+      "file": {
+        "type": "string",
+        "description": "Absolute path to the file that triggered the diagnostic."
+      }
+    }
+  }
+}

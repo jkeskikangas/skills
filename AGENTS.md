@@ -107,7 +107,7 @@ NPM_TOKEN=<npm publish token, CI only>
 
 ## CI
 
-- Runs: validate (push/PR to main, Node 18/20/22 matrix), release (tag `v*`)
+- Runs: validate (push/PR to main, Node 18/20/22/24 matrix), release (tag `v*`, default Node 24)
 - Required checks: build linter, run tests, skillcheck, agnix
 - Artifacts: npm package + SHA-256 checksums on GitHub release
 

@@ -1,10 +1,33 @@
-# skills
+# skills — ship better AI agent skills (rubric-graded + validated)
 
 [![Validate Skills](https://github.com/jkeskikangas/skills/actions/workflows/validate.yml/badge.svg)](https://github.com/jkeskikangas/skills/actions/workflows/validate.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/%40jkeskikangas%2Fskillcheck)](https://www.npmjs.com/package/@jkeskikangas/skillcheck)
 
-AI coding agents produce better results with well-structured skills. **skills** gives you rubric-graded writing + review workflows that turn rough prompts into professional-grade skill definitions — with validation, iterative critic feedback, and cross-platform portability (Claude Code, OpenAI Codex CLI, Cursor, Windsurf, …).
+AI coding agents produce better results with well-structured skills and repo context. **skills** gives you rubric-graded writing + review workflows that turn rough prompts into professional-grade skill definitions — with validation, iterative critic feedback, and cross-platform portability (Claude Code, OpenAI Codex CLI, Cursor, Windsurf, …).
+
+Includes:
+- **Installable skills** (this repo) — writing + review workflows for skill directories and agent context files
+- **`@jkeskikangas/skillcheck`** — a linter/validator you can run in CI or locally
+
+## 60-second demo
+
+Install a reviewer skill into your agent (via the [skills.sh](https://skills.sh) CLI):
+
+```bash
+npx skills add jkeskikangas/skills@latest -s reviewing-skills
+```
+
+Then, in your agent, run `$reviewing-skills` on your skill folder to get a grade + prioritized fixes.
+
+## Pick your path
+
+| Goal | Run this |
+|---|---|
+| Create or upgrade a skill directory | [`writing-skills`](skills/writing-skills/SKILL.md) |
+| Grade/review an existing skill | [`reviewing-skills`](skills/reviewing-skills/SKILL.md) |
+| Generate/update `AGENTS.md` (repo context for agents) | [`writing-agents-md`](skills/writing-agents-md/SKILL.md) |
+| Create/upgrade a scoring rubric | [`writing-rubrics`](skills/writing-rubrics/SKILL.md) |
 
 ## What you get
 
@@ -36,7 +59,7 @@ Apply the fixes, re-run — score jumps to **4.6 / 5.0 (Grade A, PASS)**.
 
 ## Quickstart (recommended)
 
-Install the skills into your agent using the `skills` installer CLI:
+Install the skills into your agent using the [skills.sh](https://skills.sh) CLI:
 
 ```bash
 npx skills add jkeskikangas/skills@latest
@@ -166,6 +189,12 @@ This project uses [semantic versioning](https://semver.org/). Skill schema chang
   - `npx skills add jkeskikangas/skills@latest -s writing-skills -a claude-code`
 - **My agent doesn’t pick up the skill.** Confirm the skill’s `SKILL.md` is in the agent’s configured skills path and restart the agent/extension.
 - **I want to contribute.** Start with [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: see [SECURITY.md](SECURITY.md).
+
+## Share this
+
+If this helped, share the repo with a one-liner:
+
+> Rubric-graded, portable AI agent skills + CI validation (Codex/Claude/Cursor/Windsurf): github.com/jkeskikangas/skills
 
 ## Alternatives
 

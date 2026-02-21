@@ -1,14 +1,15 @@
 import type { Frontmatter, FrontmatterBlock, MarkdownText } from "./types.js";
 
 export function readFrontmatterBlock(text: MarkdownText): FrontmatterBlock {
-  if (!text.startsWith("---\n")) {
+  const normalized = text.replace(/\r\n/g, "\n") as MarkdownText;
+  if (!normalized.startsWith("---\n")) {
     throw new Error("SKILL.md must start with YAML frontmatter (---).");
   }
-  const end = text.indexOf("\n---\n", 4);
+  const end = normalized.indexOf("\n---\n", 4);
   if (end === -1) {
     throw new Error("SKILL.md frontmatter is missing closing --- delimiter.");
   }
-  return text.slice(4, end) as FrontmatterBlock;
+  return normalized.slice(4, end) as FrontmatterBlock;
 }
 
 export function parseFrontmatter(frontmatterText: FrontmatterBlock): Frontmatter {

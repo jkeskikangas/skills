@@ -1,5 +1,5 @@
 import type { SkillContext, LintDiagnostic, MarkdownText, RelativeLink, ChainDescription } from "../types.js";
-import { join, resolve, relative, extname, dirname } from "node:path";
+import { join, resolve, relative, extname, dirname, isAbsolute } from "node:path";
 import { extractLocalMarkdownLinks } from "./links-resolve.js";
 
 function isProbablyMarkdown(filePath: string): boolean {
@@ -16,7 +16,8 @@ export function findDeepChains(
 
   for (const link of [...links].sort()) {
     const resolved = resolve(dir, link);
-    if (!resolved.startsWith(dir) || !isProbablyMarkdown(resolved)) continue;
+    const rel = relative(dir, resolved);
+    if (!rel || rel.startsWith("..") || isAbsolute(rel) || !isProbablyMarkdown(resolved)) continue;
 
     const content = readFile(resolved);
     if (content === null) continue;

@@ -18,7 +18,7 @@ Install a reviewer skill into your agent (via the [skills.sh](https://skills.sh)
 npx skills add jkeskikangas/skills@latest -s reviewing-skills
 ```
 
-Then, in your agent, run `$reviewing-skills` on your skill folder to get a grade + prioritized fixes.
+Then, in your agent, run `reviewing-skills` on your skill folder to get a grade + prioritized fixes.
 
 ## Pick your path
 

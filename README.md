@@ -45,7 +45,7 @@ npx skills add jkeskikangas/skills@latest
 For reproducible installs, pin to a version tag:
 
 ```bash
-npx skills add jkeskikangas/skills@v0.2.0
+npx skills add jkeskikangas/skills@v0.2.1
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for release notes. Each release also creates a corresponding git tag.

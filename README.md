@@ -1,10 +1,10 @@
-# skills — ship better AI agent skills (rubric-graded + validated)
+# Ship better AI agent skills (rubric-graded + validated)
 
 [![Validate Skills](https://github.com/jkeskikangas/skills/actions/workflows/validate.yml/badge.svg)](https://github.com/jkeskikangas/skills/actions/workflows/validate.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/%40jkeskikangas%2Fskillcheck)](https://www.npmjs.com/package/@jkeskikangas/skillcheck)
 
-AI coding agents produce better results with well-structured skills and repo context. **skills** gives you rubric-graded writing + review workflows that turn rough prompts into professional-grade skill definitions — with validation, iterative critic feedback, and cross-platform portability (Claude Code, OpenAI Codex CLI, Cursor, Windsurf, …).
+AI coding agents produce better results with well-structured skills and `AGENTS.md`. **skills** gives you rubric-graded writing + review workflows that turn rough prompts into professional-grade skill definitions — with validation, iterative critic feedback, and cross-platform portability (Claude Code, OpenAI Codex CLI, Cursor, Windsurf, …).
 
 Includes:
 - **Installable skills** (this repo) — writing + review workflows for skill directories and agent context files

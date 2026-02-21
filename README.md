@@ -1,36 +1,16 @@
 # skills
 
-AI coding agents produce better results with well-structured skills. **skills** gives developers rubric-graded writing and review workflows that turn rough prompts into professional-grade skill definitions — with validation scripts, iterative critic feedback, and cross-platform portability (Claude Code, OpenAI Codex, OpenCode, Cursor, Windsurf).
+[![Validate Skills](https://github.com/jkeskikangas/skills/actions/workflows/validate.yml/badge.svg)](https://github.com/jkeskikangas/skills/actions/workflows/validate.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![npm](https://img.shields.io/npm/v/%40jkeskikangas%2Fskillcheck)](https://www.npmjs.com/package/@jkeskikangas/skillcheck)
 
-## Install
+AI coding agents produce better results with well-structured skills. **skills** gives you rubric-graded writing + review workflows that turn rough prompts into professional-grade skill definitions — with validation, iterative critic feedback, and cross-platform portability (Claude Code, OpenAI Codex CLI, Cursor, Windsurf, …).
 
-```bash
-npx skills add jkeskikangas/skills@v0.1.0
-```
+## What you get
 
-> Pin to a specific version tag for reproducible installs. See [CHANGELOG.md](CHANGELOG.md) for the latest version. Each release creates a corresponding git tag.
+**You prompt:** “Review my skill and tell me if it’s good.”
 
-The CLI auto-detects your installed agents (Claude Code, Cursor, Windsurf, etc.) and installs the selected skills. Use flags for non-interactive install:
-
-```bash
-npx skills add jkeskikangas/skills@v0.1.0 --all        # install all skills to all agents
-npx skills add jkeskikangas/skills@v0.1.0 -s writing-skills -a claude-code
-```
-
-### Manual install
-
-Clone the repo and copy skill directories into your agent's skills path:
-
-```bash
-git clone https://github.com/jkeskikangas/skills.git
-cp -r skills/skills/writing-skills ~/.claude/skills/writing-skills
-```
-
-## Quick Example
-
-**You prompt:** "Review my skill and tell me if it's good."
-
-**What you actually get** (via `reviewing-skills`):
+**You get** (via [`skills/reviewing-skills/SKILL.md`](skills/reviewing-skills/SKILL.md)):
 
 ```
 Grade: C (2.8 / 5.0) — ITERATE
@@ -52,92 +32,146 @@ P2  vague-trigger       "Use this skill when appropriate" — does not help
     Fix: replace with concrete trigger conditions.
 ```
 
-Apply the two fixes, re-run — score jumps to **4.6 / 5.0 (Grade A, PASS)**.
+Apply the fixes, re-run — score jumps to **4.6 / 5.0 (Grade A, PASS)**.
 
-## Skills
+## Quickstart (recommended)
 
-| Skill | Description |
-|-------|-------------|
-| `writing-agents-md` | Generate or update `AGENTS.md` context files for AI coding agents |
-| `writing-skills` | Create or update agent skill directories with validation and generator-critic workflow |
-| `reviewing-skills` | Review and grade agent skills for specification compliance, clarity, and portability |
-| `writing-rubrics` | Create or update rubric documents with consistent grade bands and evidence-backed rules |
+Install the skills into your agent using the `skills` installer CLI:
 
-## How It Works
-
-Each writing skill follows a **generator → validate → two-phase quality gate** workflow:
-
-1. **Write** — generates the artifact (SKILL.md, AGENTS.md, rubric) following a structured template
-2. **Validate** — runs linters (`skillcheck`, `agnix`) to check structure, frontmatter, and spec compliance
-3. **Quality Gate — Phase 1: Self-critic review** — grades the output against the rubric (1.0–5.0 weighted score), fixes obvious gaps inline
-4. **Quality Gate — Phase 2: Fresh-context subagent review** — a companion reviewing skill re-grades in a clean context; apply P1/P2 findings, re-validate, repeat up to 3 loops until the bar is met (score >= 4.5, no P1s)
-
-```
-  Write ──> Validate ──> Self-review ──> Subagent review ──> Pass? ──> Done
-    ^                        │                   │
-    └────────────────────────┘                   │
-    ^                                            │
-    └─────── Fix P1/P2 findings (≤ 3 loops) ─────┘
+```bash
+npx skills add jkeskikangas/skills@latest
 ```
 
-## Differentiation
+For reproducible installs, pin to a version tag:
 
-| | skills | Hand-written prompts | Generic prompt libraries |
-|---|---|---|---|
-| **Structure** | Enforced schema (SKILL.md frontmatter, sections, validation) | Freeform | Varies |
-| **Quality feedback** | Rubric-graded reviews with scored dimensions and concrete patches | None | None or subjective |
-| **Cross-platform** | Portable across major agents | Platform-locked | Usually platform-locked |
-| **Validation** | Automated scripts (broken links, deep chains, placeholders, name constraints) | Manual review | None |
-| **Iteration** | Two-phase quality gate (self-review + subagent critic loop) with stop conditions | Ad-hoc | Ad-hoc |
-
-## Structure
-
-Each skill directory follows a standard layout:
-
-```
-skills/<skill-name>/
-  SKILL.md              # Skill definition and workflow
-  agents/openai.yaml    # OpenAI Codex agent configuration
-  references/           # Rubrics, examples, schema notes
-  scripts/              # Scaffolding scripts
+```bash
+npx skills add jkeskikangas/skills@v0.1.0
 ```
 
-## Scope and Non-goals
+See [CHANGELOG.md](CHANGELOG.md) for release notes. Each release also creates a corresponding git tag.
 
-**In scope:**
-- Writing and reviewing agent skill definitions (SKILL.md + supporting resources)
-- Writing and reviewing rubrics used by those skills
-- Writing and reviewing AGENTS.md project context files
+### Non-interactive install
+
+- `--all`: install all skills to all detected agents
+- `-s <skill>`: select a single skill
+- `-a <agent>`: select a single agent
+
+```bash
+npx skills add jkeskikangas/skills@latest --all
+npx skills add jkeskikangas/skills@latest -s writing-skills -a claude-code
+```
+
+### Verify install
+
+After running `skills add`, you should see skill directories in your agent’s skills folder (exact path depends on the agent). Common locations:
+
+- `~/.claude/skills/` (Claude Code)
+- `~/.codex/skills/` (OpenAI Codex CLI)
+
+Quick success check:
+
+```bash
+ls ~/.claude/skills/writing-skills/SKILL.md
+# or
+ls ~/.codex/skills/writing-skills/SKILL.md
+```
+
+Windows PowerShell equivalent:
+
+```powershell
+Test-Path "$HOME\.claude\skills\writing-skills\SKILL.md"
+```
+
+Then invoke one of the installed skills in your agent (example: `$reviewing-skills`).
+
+### Manual install
+
+Clone the repo and copy skill directories into your agent’s skills path:
+
+```bash
+git clone https://github.com/jkeskikangas/skills.git
+cp -r skills/writing-skills ~/.claude/skills/writing-skills
+```
+
+## Included skills
+
+| Skill | What it does |
+|---|---|
+| [`writing-agents-md`](skills/writing-agents-md/SKILL.md) | Generate or update `AGENTS.md` context files for AI coding agents |
+| [`writing-skills`](skills/writing-skills/SKILL.md) | Create or update agent skill directories with validation + generator-critic workflow |
+| [`reviewing-skills`](skills/reviewing-skills/SKILL.md) | Review and grade agent skills for spec compliance, clarity, and portability |
+| [`writing-rubrics`](skills/writing-rubrics/SKILL.md) | Create or update rubric documents with consistent grade bands and evidence-backed rules |
+
+### Which skill should I run?
+
+- You’re starting from scratch → `writing-skills`
+- You already have a skill and want it to pass spec + portability checks → `reviewing-skills`
+- Your repo needs reliable agent context → `writing-agents-md`
+- You want a new grading rubric or to refine one → `writing-rubrics`
+
+## How it works
+
+Each writing skill follows a **generator → validate → two-phase quality gate** loop:
+
+1. **Write** — generate the artifact (SKILL.md, AGENTS.md, rubric)
+2. **Validate** — run linters (`skillcheck`, `agnix`)
+3. **Quality gate** — self-critic review, then a fresh-context subagent re-grade
+4. **Fix + repeat** — apply P1/P2 findings and re-validate (≤ 3 loops; stop when score ≥ 4.5 and no P1s)
+
+## Validate locally (CI-equivalent)
+
+From the repo root:
+
+```bash
+npx @jkeskikangas/skillcheck skills/
+npx agnix skills/
+```
+
+## Scope and non-goals
+
+In scope:
+- Writing + reviewing agent skill definitions (SKILL.md + supporting resources)
+- Writing + reviewing rubrics used by those skills
+- Writing + reviewing `AGENTS.md` project context files
 - Validation scripts for structural correctness
 
-**Non-goals:**
+Non-goals:
 - Agent runtime or execution framework
-- Prompt library or prompt template collection
+- Prompt library / prompt template collection
 - IDE plugin or editor extension
-- Package manager or dependency management for skills
+- Package manager / dependency management for skills
 
-## Prerequisites
+## Supported platforms
 
-- **Node.js 18+** (for validation via `npx skillcheck`)
-- **Git** (for cloning and CI)
-- An AI coding agent (see intro for supported list)
+- Works on **macOS, Linux, and Windows** (requires Node.js 18+).
+- No native dependencies; intended to run anywhere Node runs.
+- CI validates on Ubuntu/macOS/Windows across Node 18/20/22.
 
 ## Versioning
 
-This project uses [semantic versioning](https://semver.org/). Skill schema changes are tracked in `skills/writing-agents-md/references/schema-changelog.md`.
+This project uses [semantic versioning](https://semver.org/). Skill schema changes are tracked in [`skills/writing-agents-md/references/schema-changelog.md`](skills/writing-agents-md/references/schema-changelog.md).
 
 - **Major**: breaking changes to skill schema or validation scripts
 - **Minor**: new skills, new validation checks, new rubric dimensions
 - **Patch**: documentation fixes, rubric wording, non-breaking script fixes
 
-See [CHANGELOG.md](CHANGELOG.md) for release history.
-
 ## Schemas
 
-Machine-readable JSON schemas for integration and validation:
+- [`schemas/skill-frontmatter.schema.json`](schemas/skill-frontmatter.schema.json) — SKILL.md YAML frontmatter
+- [`schemas/lint-output.schema.json`](schemas/lint-output.schema.json) — `skillcheck --format json` output
 
-- [`schemas/skill-frontmatter.schema.json`](schemas/skill-frontmatter.schema.json) — SKILL.md YAML frontmatter format
-- [`schemas/lint-output.schema.json`](schemas/lint-output.schema.json) — `skillcheck --format json` output format
+## Troubleshooting
+
+- **I installed but don’t see the skill.** Re-run with explicit selection (skill + agent), then verify the target agent’s skills folder:
+  - `npx skills add jkeskikangas/skills@latest -s writing-skills -a claude-code`
+- **My agent doesn’t pick up the skill.** Confirm the skill’s `SKILL.md` is in the agent’s configured skills path and restart the agent/extension.
+- **I want to contribute.** Start with [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: see [SECURITY.md](SECURITY.md).
+
+## Alternatives
+
+- [promptfoo](https://github.com/promptfoo/promptfoo) — great for prompt/agent/RAG evaluation + regression testing; **skills** focuses on portable, rubric-graded skill authoring + structural validation.
+- [LangSmith](https://www.langchain.com/langsmith) — full LLMOps platform (tracing, evals, prompt iteration); **skills** stays lightweight and repo-native without a backend.
+- [Awesome ChatGPT Prompts](https://github.com/f/awesome-chatgpt-prompts) — large community prompt library; typically unscored/unvalidated; **skills** adds schemas, linters, and rubrics for repeatable quality.
 
 ## License
 

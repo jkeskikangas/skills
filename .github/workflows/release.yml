@@ -19,14 +19,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
       - name: Install linter
-        run: cd packages/skillcheck && npm ci
+        run: npm ci
+        working-directory: packages/skillcheck
 
       - name: Build linter
-        run: cd packages/skillcheck && npm run build
+        run: npm run build
+        working-directory: packages/skillcheck
 
       - name: Validate all skills and rubrics (skillcheck)
         run: node packages/skillcheck/bin/skillcheck.js skills/
@@ -34,10 +36,14 @@ jobs:
       - name: Validate all skills (agnix)
         run: npx agnix skills/
 
+      - name: Upgrade npm (Trusted Publishing)
+        run: |
+          npm i -g npm@11.5.1
+          npm --version
+
       - name: Publish to npm
-        run: cd packages/skillcheck && npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
+        working-directory: packages/skillcheck
 
       - name: Generate checksums
         run: |

@@ -30,6 +30,10 @@ jobs:
         run: npm run build
         working-directory: packages/skillcheck
 
+      - name: Run linter tests
+        run: npm test
+        working-directory: packages/skillcheck
+
       - name: Validate all skills and rubrics (skillcheck)
         run: node packages/skillcheck/bin/skillcheck.js skills/
 

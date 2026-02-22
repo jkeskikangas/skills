@@ -199,7 +199,7 @@ Generate this exact structure. Terse language, minimal prose. **Omit sections wi
 
 **Version tags:** Use `<!-- agents-md-version: 1 -->` as the mandatory schema version tag. A separate `<!-- version: YYYY-MM-DD -->` date tag may optionally be present (user-added, for tracking last regeneration) — preserve it if found but do not generate it.
 
-**Line budget:** Under 120 lines for single-package repos, under 200 for monorepos, up to 250 for complex multi-stack monorepos. When over budget, apply triage order from Analysis Phase.
+**Line budget:** Under 150 lines for single-package repos, under 200 for monorepos, up to 250 for complex multi-stack monorepos. When over budget, apply triage order from Analysis Phase.
 
 See `references/example-output.md` for a concrete Next.js + Prisma example.
 
@@ -410,7 +410,7 @@ After writing, verify:
 2. **Structure matches** — glob each listed directory to confirm it exists on disk
 3. **No placeholders** — no `[value]` brackets remain
 4. **No stale comments** — no HTML comments remain except: `<!-- agents-md-version: N -->`, `<!-- GAPS: ... -->`, `<!-- REVIEW: ... -->`, `<!-- REMOVED: ... -->`, and `<!-- version: YYYY-MM-DD -->`
-5. **Line count** — within budget (120 / 200 / 250)
+5. **Line count** — within budget (150 / 200 / 250)
 6. **CLAUDE.md valid** — `@` import paths resolve (glob target files)
 7. **Generated dirs marked** — all codegen/build output dirs annotated in Structure
 8. **CRITICAL completeness** — at least one MUST rule each for: package manager, linting, testing. Warn user if any missing

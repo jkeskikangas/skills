@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 - Release workflow now uses npm Trusted Publishing (OIDC) instead of `npm adduser`/tokens.
 
+## [0.2.3] - 2026-02-22
+
+### Changed
+
+- Root README now emphasizes practical failure modes and production-quality review (including rationale for the two-phase critic gate).
+- Root README title and language tightened for a more professional, repo-native tone.
+- `@jkeskikangas/skillcheck` README expanded with motivation, positioning vs. `agnix`, and core design principles.
+
+## [0.2.2] - 2026-02-21
+
+### Changed
+
+- Release workflow: ensure `repository.url` is present for provenance verification and run tests before publish.
+
 ## [0.2.0] - 2026-02-21
 
 ### Changed

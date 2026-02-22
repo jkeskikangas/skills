@@ -1,10 +1,12 @@
-# Ship better AI agent skills (rubric-graded + validated)
+# Production-grade agent instructions and skills
 
 [![Validate Skills](https://github.com/jkeskikangas/skills/actions/workflows/validate.yml/badge.svg)](https://github.com/jkeskikangas/skills/actions/workflows/validate.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/%40jkeskikangas%2Fskillcheck)](https://www.npmjs.com/package/@jkeskikangas/skillcheck)
 
-AI coding agents produce better results with well-structured skills and `AGENTS.md`. **skills** gives you rubric-graded writing + review workflows that turn rough prompts into professional-grade skill definitions — with validation, iterative critic feedback, and cross-platform portability (Claude Code, OpenAI Codex CLI, Cursor, Windsurf, …).
+Repo-native rubrics and linters for portable agent workflows.
+
+AI coding agents produce better results with well-structured skills and `AGENTS.md`. **skills** gives you rubric-graded writing and review workflows that turn rough prompts into professional-grade skill definitions, with validation, iterative critic feedback, and cross-platform portability across Claude Code, OpenAI Codex CLI, Cursor, Windsurf, and CI.
 
 Includes:
 - **Installable skills** (this repo) — writing + review workflows for skill directories and agent context files
@@ -25,7 +27,7 @@ This repo treats agent behavior as an engineering surface you can **spec, lint, 
 - A skill directory is a **capability package** (trigger → steps → constraints → references), not a loose prompt snippet.
 - Rubrics + linters make quality **repeatable**, not vibe-based.
 
-## 60-second demo
+## Quick demo
 
 Install a reviewer skill into your agent (via the [skills.sh](https://skills.sh) CLI):
 
@@ -217,12 +219,6 @@ This project uses [semantic versioning](https://semver.org/). Skill schema chang
   - `npx skills add jkeskikangas/skills@latest -s writing-skills -a claude-code`
 - **My agent doesn’t pick up the skill.** Confirm the skill’s `SKILL.md` is in the agent’s configured skills path and restart the agent/extension.
 - **I want to contribute.** Start with [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: see [SECURITY.md](SECURITY.md).
-
-## Advisory
-
-I work as an advisor on agentic software development: helping teams turn “it works in a demo” agent workflows into something you can ship, review, and maintain.
-
-If you want help applying this approach (skills + `AGENTS.md` + quality gates) to your repos and CI, open an issue describing your setup and goals.
 
 ## If this helped
 

@@ -8,6 +8,24 @@ Use it to catch broken links, missing frontmatter, and rubric drift **before** y
 - CI-friendly exit codes + optional JSON output (`--format json`)
 - Cross-platform (Node.js 18+, no native deps)
 
+## Why lint skill directories?
+
+In agentic workflows, “looks fine” is not a quality bar. Skills tend to fail at runtime because of small, structural issues that are cheap to catch early:
+
+- A skill references a file that doesn’t exist (`references/`, `scripts/`, `agents/`).
+- Frontmatter fields drift or become ambiguous, making activation/behavior inconsistent across agents.
+- Rubrics evolve, but your checked-in rubric text no longer matches the rubric your reviewers assume (“rubric drift”).
+- Tool configs get out of sync with safety constraints or token budgets, causing brittle behavior.
+
+`skillcheck` exists to make these failures **reviewable and CI-gateable**, so you spend your time improving the skill—not debugging the scaffolding.
+
+## How it fits (with `agnix`)
+
+- `skillcheck`: repo-native structural validation + rubric consistency (fast, deterministic, offline).
+- `agnix`: spec-level portability linting across agent environments.
+
+For “ship it” confidence, run both in CI.
+
 ## Install
 
 ```bash
@@ -135,6 +153,13 @@ cd packages/skillcheck && npm ci
 cd packages/skillcheck && npm run build
 cd packages/skillcheck && npm test
 ```
+
+## Design principles
+
+- **Deterministic and offline**: no network calls; same inputs → same diagnostics.
+- **Actionable output**: human-friendly default format + JSON for tooling.
+- **Composable rules**: checks are small and targeted (easy to extend without breaking consumers).
+- **Safety-friendly**: designed for skill repos where secrets must never be read or emitted.
 
 ## Related tooling
 

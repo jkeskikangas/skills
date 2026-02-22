@@ -10,6 +10,21 @@ Includes:
 - **Installable skills** (this repo) — writing + review workflows for skill directories and agent context files
 - **`@jkeskikangas/skillcheck`** — a linter/validator you can run in CI or locally
 
+## Why this matters (in practice)
+
+Agentic software development fails in predictable, expensive ways:
+
+- **Instruction drift** — a “helpful” agent invents repo commands, ignores conventions, or uses the wrong build/test workflow.
+- **Context collapse** — critical constraints live in someone’s head (or a chat log), not in the repo where the agent can reliably find them.
+- **Non-portability** — a prompt/skill works in one tool, then breaks when you switch (Codex ↔ Claude ↔ Cursor ↔ CI).
+- **Unreviewable artifacts** — skills that look plausible but can’t be validated, graded, or improved systematically.
+
+This repo treats agent behavior as an engineering surface you can **spec, lint, review, and ship**:
+
+- `AGENTS.md` is the repo’s **operating manual** for humans and agents (what to run, how to stay safe, how to escalate).
+- A skill directory is a **capability package** (trigger → steps → constraints → references), not a loose prompt snippet.
+- Rubrics + linters make quality **repeatable**, not vibe-based.
+
 ## 60-second demo
 
 Install a reviewer skill into your agent (via the [skills.sh](https://skills.sh) CLI):
@@ -141,6 +156,19 @@ Each writing skill follows a **generator → validate → two-phase quality gate
 3. **Quality gate** — self-critic review, then a fresh-context subagent re-grade
 4. **Fix + repeat** — apply P1/P2 findings and re-validate (≤ 3 loops; stop when score ≥ 4.5 and no P1s)
 
+### Why the two-phase critic gate is worth it
+
+If you only do one review pass, you mostly catch “typos while you still remember what you meant”.
+The second pass is different: it asks “**does this stand alone** when run by a fresh agent with no extra context?”
+
+That’s the production condition for skills. Most costly failures happen when:
+
+- A skill implicitly relies on unstated repo conventions.
+- The agent follows the steps but misses a hidden constraint (safety, token limits, tool scope, platform differences).
+- A rubric sounds reasonable but grades inconsistently (drift).
+
+The two-phase gate is a low-cost way to surface these issues *before* they become multi-hour debugging sessions or risky changes.
+
 ## Validate locally (CI-equivalent)
 
 From the repo root:
@@ -190,11 +218,16 @@ This project uses [semantic versioning](https://semver.org/). Skill schema chang
 - **My agent doesn’t pick up the skill.** Confirm the skill’s `SKILL.md` is in the agent’s configured skills path and restart the agent/extension.
 - **I want to contribute.** Start with [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: see [SECURITY.md](SECURITY.md).
 
-## Share this
+## Advisory
 
-If this helped, share the repo with a one-liner:
+I work as an advisor on agentic software development: helping teams turn “it works in a demo” agent workflows into something you can ship, review, and maintain.
 
-> Rubric-graded, portable AI agent skills + CI validation (Codex/Claude/Cursor/Windsurf): github.com/jkeskikangas/skills
+If you want help applying this approach (skills + `AGENTS.md` + quality gates) to your repos and CI, open an issue describing your setup and goals.
+
+## If this helped
+
+- Star the repo to signal demand.
+- Share with teams standardizing agent workflows (Codex/Claude/Cursor/Windsurf).
 
 ## Alternatives
 

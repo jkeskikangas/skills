@@ -8,6 +8,8 @@
 - MUST: Run both linters before commit: `node packages/skillcheck/bin/skillcheck.js skills/` and `npx agnix skills/`
 - MUST: `cd packages/skillcheck && npm test` before PR
 - MUST: Use `npm install <pkg>` to change deps (DO NOT edit package.json manually)
+- MUST: Use `cd packages/skillcheck && npm version <patch|minor|major> && git push --follow-tags` to release (tag must match package.json version)
+- NEVER: Push a git tag manually without bumping `packages/skillcheck/package.json` first (CI will fail)
 - NEVER: Force push (`git push --force`, `git push -f`) to shared branches
 - NEVER: Skip pre-commit hooks (`--no-verify`)
 - NEVER: Edit files in `packages/skillcheck/dist/` (generated)
@@ -109,7 +111,9 @@ NPM_TOKEN=<npm publish token, CI only>
 
 - Runs: validate (push/PR to main, Node 18/20/22/24 matrix), release (tag `v*`, default Node 24)
 - Required checks: build linter, run tests, skillcheck, agnix
+- Release gate: CI verifies git tag matches `packages/skillcheck/package.json` version before publishing
 - Artifacts: npm package + SHA-256 checksums on GitHub release
+- Release flow: `cd packages/skillcheck && npm version <patch|minor|major> && git push --follow-tags`
 
 ## Tool Preferences
 

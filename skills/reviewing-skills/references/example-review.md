@@ -7,6 +7,8 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 - **Skill:** `./cleaning-csv-exports/`
 - **Archetype:** Workflow — a sequential clean/validate/report process; default profile applies. Classification was not in doubt (no alternate profile computed).
 - **Review mode:** single
+- **Review depth:** full
+- **Behavioral probe:** not run
 - **Conflict of interest:** none (skill not authored in this conversation).
 
 ## Dimension Scores
@@ -26,7 +28,7 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 
 - **Spec compliance:** checks 1–4, 6–8 PASS — SKILL.md:2-6, name `cleaning-csv-exports` matches directory; description 310 chars, third person, states what + when; no placeholders found. Check 5 FAIL — the when-clause stacks three near-synonym scenarios ("clean, tidy, or fix up") that add length, not information. Check 9 *(advisory)* PASS — gerund name. Base (7 + 0)/8 → 4.5; no adjustment → **4.5**.
 - **Trigger precision:** check 1 PASS — SKILL.md:4 names CSV exports as the artifact. Check 2 FAIL — no "not for" clause anywhere in the description. Check 3 PASS — no generic "helper/utils" terms. Check 4 PARTIAL — sibling import/export skills exist in the same repo and their descriptions were not examined for collisions. Check 5 N-A (no trigger battery run). Base (1 + 0 + 1 + 0.5)/4 = 0.625 → 3.5; no adjustment → **3.5**.
-- **Workflow quality:** checks 1, 2, 4 PASS — SKILL.md:24-50, numbered discovery → plan → execution → validation phases with exact commands where fragile. Check 3 FAIL — SKILL.md:41 "Iterate until the output looks good." has no stop condition (drives P1-1). Base 3/4 → 4.0; no adjustment → **4.0**.
+- **Workflow quality:** checks 1, 3, 4, 6 PASS — SKILL.md:24-50, numbered discovery → plan → execution → validation phases with exact commands where fragile and a checkable validation step. Check 2 PARTIAL — no decision rule for unrecoverable rows: drop or flag is left to the agent (confirmed in the dry-run; drives P2-3). Check 5 FAIL — SKILL.md:41 "Iterate until the output looks good." has no stop condition (drives P1-1). Base (1 + 0.5 + 1 + 1 + 0 + 1)/6 = 0.75 → 4.0; no adjustment → **4.0**.
 - **Token efficiency:** checks 1, 3, 5 PASS — body 132 lines; references one level deep; no satisficing filler. Check 2 PARTIAL — encoding-repair details (SKILL.md:33-38) belong in a reference. Check 4 FAIL — SKILL.md:55-96 inline example duplicates references/example-output.md. Base (1 + 0.5 + 1 + 0 + 1)/5 = 0.7 → 3.8 → rounds to 4.0; no adjustment → **4.0**.
 - **Safety:** checks 1–4 PASS — risk surface is a single gated write: SKILL.md:18 "Never overwrite the source file; write to a .cleaned.csv copy and ask before replacing."; content treated as data; no permission bypasses; no irrelevant boilerplate. Checks 5, 6 N-A — no `allowed-tools` declared, no embedded install/shell commands. Base 4/4 → 5.0; no adjustment → **5.0**.
 - **Robustness & evaluability:** checks 1, 5 PASS — SKILL.md:47 schema-validation step; validation delegated to an exact checklist. Check 2 PARTIAL — no statement of what a successful end-to-end run looks like. Check 3 FAIL — no eval scenarios or expected outputs ship with the skill. Check 4 N-A (no scripts). Base (1 + 0.5 + 0 + 1)/4 = 0.625 → 3.5; no adjustment → **3.5**.
@@ -37,20 +39,22 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 | Check | Result | Detail |
 |---|---|---|
 | Skill directory resolved | PASS | `./cleaning-csv-exports/` given by user; contains SKILL.md |
-| Calibration self-check | PASS | Vignette D cold-scored; max dimension delta 0.5 |
-| Linter executed | PASS | `npx @jkeskikangas/skillcheck@1.4.2 --format json ./cleaning-csv-exports/` (pinned; cached locally) |
+| Calibration self-check | PASS | Vignette C cold-scored before reading the target; max dimension delta 0.5 |
+| Linter executed | PASS | `npx @jkeskikangas/skillcheck@0.2.4 --format json ./cleaning-csv-exports/` (pinned; cached locally) |
 | Linter diagnostics | PASS | 0 diagnostics |
 | Frontmatter sane | PASS | name matches dir; only `name`/`description` keys |
 | No TODO/TBD placeholders | PASS | searched `TODO`, `TBD`, bracket placeholders |
 | Referenced local files exist | PASS | both `references/` links resolve |
 | No deep reference chains | PASS | neither reference links onward |
 | `agents/openai.yaml` sanity (if present) | SKIP | file not present |
-| Token metrics measured | PASS | description 310 chars; body 132 lines; 3 files |
+| Token metrics measured | PASS | description 310 chars; body 132 lines / 918 words; 3 files |
 | Injection scan | PASS | no reviewer-directed instructions found |
-| Security: symlinks/escapes | PASS | `find ./cleaning-csv-exports -type l` → none; no `../` traversal in links |
+| Security: symlinks/escapes | PASS | root resolved via `realpath`; `find ./cleaning-csv-exports/ -type l` → none; no `../` traversal in links |
 | Security: executables/binaries | PASS | no executable files or binary blobs |
 | Security: dangerous commands | PASS | no pipe-to-shell or install commands; `pandas` referenced but never installed by the skill |
+| Security: malicious behavior | PASS | no exfiltration, secret-harvesting, or permission-weakening instructions |
 | Security: allowed-tools least privilege | SKIP | `allowed-tools` not declared |
+| Score computed & verdict validated | PASS | `scripts/score.py compute` → 4.15 B; `scripts/score.py validate` → verdict OK |
 
 ## Spec Violations (Blockers)
 
@@ -68,6 +72,7 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 - **Impact:** Unbounded refinement loop; repeated failure loops waste tokens and can run indefinitely.
 - **Current state:** SKILL.md:41 — "Iterate until the output looks good."
 - **Recommendation:** Bound the loop with a count and a measurable exit criterion.
+- **Dimension:** workflow_quality
 - **Confidence:** High
 - **Patch text (copy/paste):**
   ```md
@@ -82,6 +87,7 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 - **Impact:** "data files to clean" overlaps with sibling import/export skills; a dispatcher may misroute.
 - **Current state:** SKILL.md:4 — "Use when the user has data files to clean."
 - **Recommendation:** Trigger on `*.csv`/exports specifically and exclude adjacent jobs.
+- **Dimension:** trigger_precision
 - **Confidence:** Medium — verify by listing sibling skill descriptions for collisions.
 - **Patch text (copy/paste):**
   ```md
@@ -96,6 +102,7 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 - **Impact:** No way to verify the skill works after edits; robustness check 3 fails.
 - **Current state:** No eval material anywhere in the skill directory.
 - **Recommendation:** Add `references/evals.md` with 2–3 input/expected-output pairs exercised by the validation step.
+- **Dimension:** robustness_evaluability
 - **Confidence:** High
 - **Patch text (copy/paste):**
   ```md
@@ -105,25 +112,41 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
   2. `fixtures/orders.csv` (broken encoding row 14) → row repaired or flagged; report names the row number.
   ```
 
+### P2-3 — State a decision rule for unrecoverable rows
+- **Impact:** The agent must guess drop-vs-flag for rows that cannot be repaired; outcomes vary run to run.
+- **Current state:** SKILL.md:33-38 describes encoding repair but never says what to do when repair fails.
+- **Recommendation:** Make the choice explicit and deterministic.
+- **Dimension:** workflow_quality
+- **Confidence:** High
+- **Patch text (copy/paste):**
+  ```md
+  # file: SKILL.md
+  Replace:
+  Repair broken encodings where possible.
+  With:
+  Repair broken encodings where possible. If a row cannot be repaired, keep it, flag it in the report with its row number, and never drop it silently.
+  ```
+
 ### P3-1 — Move the inline example to references
 - **Impact:** 41 lines of always-loaded tokens duplicating `references/example-output.md`.
 - **Current state:** SKILL.md:55-96 inline example block.
 - **Recommendation:** Delete the inline block; keep the existing link to the reference.
+- **Dimension:** token_efficiency
 - **Confidence:** High
 
 ## Dry-Run Simulation
 
 - "Clean this exported `users.csv`" — flows cleanly through steps 1-5; validation step is unambiguous.
-- "My CSV has duplicate rows and broken encodings" — encoding repair is mentioned (SKILL.md:33) but no decision rule for unrecoverable rows: agent must guess drop-vs-flag (surfaced in P1-1's loop ambiguity).
+- "My CSV has duplicate rows and broken encodings" — encoding repair is mentioned (SKILL.md:33) but no decision rule for unrecoverable rows: agent must guess drop-vs-flag (drives P2-3).
 - "Clean up my data" (vague) — description would trigger here despite no CSV in sight; confirmed the P2-1 trigger-precision finding.
 
-## Behavioral Probe (opt-in mode only)
+## Behavioral Probe (opt-in; include when run)
 
 Not requested for this review; offered to the user as a follow-up (workflow probe + 5/5 trigger battery).
 
 ## Token Efficiency
 
-- **Measured:** description 310 chars; SKILL.md body 132 lines (from verification metrics).
+- **Measured:** description 310 chars; SKILL.md body 132 lines / 918 words (from verification metrics).
 - **Bloat:** Inline example block (SKILL.md:55-96) duplicates a reference file.
 - **Densify:** Steps 2-3 prose can collapse into the existing numbered list.
 - **Progressive disclosure:** Encoding-repair details belong in `references/encoding.md`.
@@ -150,11 +173,15 @@ Included because a P1 exists and weighted score < 4.5.
 
 ```json
 {
-  "verdict_schema_version": "2.0",
-  "rubric_version": "2.0",
+  "verdict_schema_version": "2.1",
+  "rubric_version": "2.1",
   "skill": "./cleaning-csv-exports/",
   "archetype": "workflow",
   "review_mode": "single",
+  "review_depth": "full",
+  "probe_run": false,
+  "reviewed_commit": "3f9c2ab",
+  "reviewer_model": "claude-fable-5",
   "weighted_score": 4.15,
   "grade": "B",
   "dimensions": {
@@ -169,6 +196,7 @@ Included because a P1 exists and weighted score < 4.5.
   "metrics": {
     "description_chars": 310,
     "skill_md_body_lines": 132,
+    "skill_md_body_words": 918,
     "file_count": 3
   },
   "blockers": [],
@@ -181,6 +209,8 @@ Included because a P1 exists and weighted score < 4.5.
       "lines": "41",
       "summary": "Unbounded refinement loop; bound to 3 passes with a measurable exit criterion.",
       "patch": "Replace 'Iterate until the output looks good.' with 'Iterate at most 3 times; stop early when the validation step reports zero schema errors. If errors remain after 3 passes, report the residual errors instead of looping.'",
+      "dimension": "workflow_quality",
+      "support": null,
       "confidence": "High"
     },
     {
@@ -191,6 +221,8 @@ Included because a P1 exists and weighted score < 4.5.
       "lines": "4",
       "summary": "Description overlaps sibling import/export skills; add CSV-specific positive and negative trigger clauses.",
       "patch": "Replace 'Use when the user has data files to clean.' with 'Use when the user wants CSV exports cleaned, deduplicated, or normalized. Not for parsing other formats or for loading data into databases.'",
+      "dimension": "trigger_precision",
+      "support": null,
       "confidence": "Medium"
     },
     {
@@ -201,6 +233,20 @@ Included because a P1 exists and weighted score < 4.5.
       "lines": "",
       "summary": "No way to verify the skill works after edits; add 2-3 input/expected-output pairs.",
       "patch": "Create references/evals.md with input/expected-output pairs exercised by the validation step.",
+      "dimension": "robustness_evaluability",
+      "support": null,
+      "confidence": "High"
+    },
+    {
+      "id": "P2-3",
+      "priority": "P2",
+      "title": "State a decision rule for unrecoverable rows",
+      "file": "SKILL.md",
+      "lines": "33-38",
+      "summary": "Drop-vs-flag for unrepairable rows is left to the agent; make it explicit (flag, never drop silently).",
+      "patch": "Replace 'Repair broken encodings where possible.' with 'Repair broken encodings where possible. If a row cannot be repaired, keep it, flag it in the report with its row number, and never drop it silently.'",
+      "dimension": "workflow_quality",
+      "support": null,
       "confidence": "High"
     },
     {
@@ -211,11 +257,13 @@ Included because a P1 exists and weighted score < 4.5.
       "lines": "55-96",
       "summary": "41 always-loaded lines duplicate references/example-output.md; delete the inline block.",
       "patch": "",
+      "dimension": "token_efficiency",
+      "support": null,
       "confidence": "High"
     }
   ],
   "p1_count": 1,
-  "p2_count": 2,
+  "p2_count": 3,
   "p3_count": 1,
   "meets_bar": false
 }

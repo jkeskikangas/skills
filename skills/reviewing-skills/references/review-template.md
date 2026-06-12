@@ -4,12 +4,14 @@
 
 - **Skill:** `[path]`
 - **Archetype:** [Workflow / Reference / Tool-wrapper / Orchestrator] — [1 line justifying the classification; if classification was uncertain, name the runner-up profile and whether the grade flips under it]
-- **Review mode:** [single / batch / comparative / forensic / ensemble / behavioral-probe]
+- **Review mode:** [single / batch / comparative / forensic / ensemble]
+- **Review depth:** [full / triage — triage skips scoring; see SKILL.md "Review depth"]
+- **Behavioral probe:** [not run / run]
 - **Conflict of interest:** [none / "authored or edited earlier in this conversation — fresh-context review recommended"]
 
 ## Dimension Scores
 
-Weights come from the archetype profile in the rubric — copy them; do not invent weights. Derive each score from its check results (next section) via the rubric formula; note any holistic adjustment in the Note column.
+Weights come from the archetype profile in the rubric — copy them; do not invent weights. Derive each score from its check results (next section) via `scripts/score.py compute` (rubric formula as manual fallback); note any holistic adjustment in the Note column.
 
 | Dimension | Weight | Score | Weight × Score | Note |
 |---|---:|---:|---:|---|
@@ -46,13 +48,15 @@ Per dimension: grade every rubric check PASS/PARTIAL/FAIL/N-A. Group clean PASSe
 | No TODO/TBD placeholders | [PASS/FAIL/SKIP] | [what you searched for] |
 | Referenced local files exist | [PASS/FAIL/SKIP] | [broken links or "none"] |
 | No deep reference chains | [PASS/FAIL/SKIP] | [what you checked] |
-| `agents/openai.yaml` sanity (if present) | [PASS/FAIL/SKIP] | [required keys present] |
-| Token metrics measured | [PASS/SKIP] | [description chars; SKILL.md body lines; file count] |
+| `agents/openai.yaml` sanity (if present) | [PASS/FAIL/SKIP] | [interface display_name / short_description / default_prompt present] |
+| Token metrics measured | [PASS/SKIP] | [description chars; SKILL.md body lines + words; file count] |
 | Injection scan | [PASS/FAIL] | [reviewed content does not instruct its own reviewer] |
-| Security: symlinks/escapes | [PASS/FAIL/SKIP] | [command used; what was found] |
+| Security: symlinks/escapes | [PASS/FAIL/SKIP] | [skill root resolved via realpath; command used; what was found] |
 | Security: executables/binaries | [PASS/FAIL/SKIP] | [unexpected executables or blobs, or "none"] |
 | Security: dangerous commands | [PASS/FAIL/SKIP] | [pipe-to-shell / unpinned installs found, or "none"] |
+| Security: malicious behavior | [PASS/FAIL/SKIP] | [exfiltration / secret-harvesting / permission-weakening instructions, or "none"] |
 | Security: allowed-tools least privilege | [PASS/FAIL/SKIP] | [requested vs needed, or "not declared"] |
+| Score computed & verdict validated | [PASS/FAIL/SKIP] | [`scripts/score.py compute` + `validate` output, or manual fallback noted] |
 
 ## Spec Violations (Blockers)
 
@@ -70,6 +74,7 @@ Number findings `P1-1`, `P2-1`, `P3-1`, … — the JSON verdict reuses these id
 - **Impact:** [what breaks / token waste / safety risk]
 - **Current state:** [what the skill says/does now, with file:line]
 - **Recommendation:** [specific change]
+- **Dimension:** [rubric dimension key, e.g., workflow_quality]
 - **Confidence:** [High / Medium / Low — if not High, state what would verify it]
 - **Patch text (copy/paste):**
   ```md
@@ -86,10 +91,10 @@ Number findings `P1-1`, `P2-1`, `P3-1`, … — the JSON verdict reuses these id
 
 [2–3 representative requests within the skill's trigger scope. For each: 1–3 lines on where the workflow flows cleanly and where an executing agent would stall, guess, or misroute — cross-reference the findings these produced.]
 
-## Behavioral Probe (opt-in mode only)
+## Behavioral Probe (opt-in; include when run)
 
 - **Workflow probe:** [task given to the fresh-context subagent; where it flowed, stalled, guessed, or misrouted; scripts not executed unless the user opted in]
-- **Trigger battery:** [5 in-scope + 5 out-of-scope prompts; routing accuracy N/10; misroutes cross-referenced to findings]
+- **Trigger battery:** [5 in-scope + 5 out-of-scope prompts; routing accuracy N/10, ≥9/10 = pass; misroutes cross-referenced to findings]
 
 ## Diff Analysis (forensic mode, optional)
 
@@ -129,11 +134,15 @@ Always end the report with this fenced JSON block (consumed by generator↔criti
 
 ```json
 {
-  "verdict_schema_version": "2.0",
-  "rubric_version": "2.0",
+  "verdict_schema_version": "2.1",
+  "rubric_version": "2.1",
   "skill": "[path]",
   "archetype": "workflow|reference|tool-wrapper|orchestrator",
   "review_mode": "single|batch|comparative|forensic|ensemble",
+  "review_depth": "full|triage",
+  "probe_run": false,
+  "reviewed_commit": null,
+  "reviewer_model": null,
   "weighted_score": null,
   "grade": "A|B|C|D|F",
   "dimensions": {
@@ -148,6 +157,7 @@ Always end the report with this fenced JSON block (consumed by generator↔criti
   "metrics": {
     "description_chars": null,
     "skill_md_body_lines": null,
+    "skill_md_body_words": null,
     "file_count": null
   },
   "blockers": [],
@@ -160,6 +170,8 @@ Always end the report with this fenced JSON block (consumed by generator↔criti
       "lines": "",
       "summary": "",
       "patch": "",
+      "dimension": null,
+      "support": null,
       "confidence": "High|Medium|Low"
     }
   ],
@@ -170,6 +182,8 @@ Always end the report with this fenced JSON block (consumed by generator↔criti
 }
 ```
 
-- Scores use the rubric scale 1.0–5.0; the `null` values above are placeholders to fill, never valid output.
-- `findings` embeds every reported finding (`patch` may be empty for P3s; `lines` is a string like "41" or "55-96"); the `p*_count` fields are derived from it.
-- `meets_bar` is true only when `weighted_score >= 4.5`, `p1_count == 0`, **and** `blockers` is empty.
+- Scores use the rubric scale 1.0–5.0; the `null` scores above are placeholders to fill in a full review, never valid full-review output. In triage depth, `weighted_score`, `grade`, and all `dimensions` stay null and `meets_bar` stays false.
+- `reviewed_commit`: short hash of the last commit touching the skill (`git log -1 --format=%h -- <skill>`), or null outside git — lets loop automation tell skill changes from reviewer drift. `reviewer_model`: the model identifier the reviewer runs as, or null if unknown.
+- `findings` embeds every reported finding (`patch` may be empty for P3s; `lines` is a string like "41" or "55-96"); the `p*_count` fields are derived from it. `dimension` names the rubric dimension a finding maps to (or null); `support` is the number of ensemble reviews that reported the finding (null outside ensemble mode).
+- `meets_bar` is true only when `review_depth` is "full", `weighted_score >= 4.5`, `p1_count == 0`, **and** `blockers` is empty.
+- Validate the finished block with `python3 scripts/score.py validate <verdict.json>` before delivering.

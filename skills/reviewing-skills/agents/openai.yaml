@@ -1,4 +1,4 @@
 interface:
   display_name: "Reviewing Skills"
   short_description: "Grade a skill with a strict, evidence-cited rubric"
-  default_prompt: "Use $reviewing-skills to review the skill in <skill-directory> (read-only). Follow SKILL.md exactly: deterministic checks and the artifact security scan first, then check-based scoring per references/skills-rubric.md (evidence before verdict), then the report per references/review-template.md, ending with the machine-readable JSON verdict."
+  default_prompt: "Use $reviewing-skills to review the skill in <skill-directory> (read-only). Follow SKILL.md exactly: calibrate, run deterministic checks and the artifact security scan, score per references/skills-rubric.md (evidence before verdict; scripts/score.py for arithmetic), then report per references/review-template.md, ending with the validated machine-readable JSON verdict."

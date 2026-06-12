@@ -30,7 +30,7 @@ Do not use when:
 
 Target outcome:
 - **No spec violations**, and
-- **Weighted score ≥ 4.5/5.0** (A- or better), and
+- **Weighted score ≥ 4.5/5.0** (grade A), and
 - **No P1 findings**
 
 The rubric is owned by: `$reviewing-skills` → `reviewing-skills/references/skills-rubric.md` (single source of truth).

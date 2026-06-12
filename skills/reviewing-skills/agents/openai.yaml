@@ -1,4 +1,4 @@
 interface:
   display_name: "Reviewing Skills"
-  short_description: "Grade a skill with a strict rubric"
-  default_prompt: "Use $reviewing-skills to review the skill in <skill-directory> (read-only). Score each dimension using references/skills-rubric.md and compute the weighted score/grade. Output the report using references/review-template.md (max ~15 findings; include patch text for every P1/P2)."
+  short_description: "Grade a skill with a strict, evidence-cited rubric"
+  default_prompt: "Use $reviewing-skills to review the skill in <skill-directory> (read-only). Run deterministic checks (skillcheck if available), classify the archetype, then score each dimension using references/skills-rubric.md — evidence before score — and compute the weighted score/grade showing the arithmetic. Output the report using references/review-template.md (max ~15 findings; patch text and confidence for every P1/P2; end with the machine-readable JSON verdict)."

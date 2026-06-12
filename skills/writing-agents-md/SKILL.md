@@ -29,7 +29,7 @@ Do not use when:
 
 Target outcome:
 - **No spec violations** (format/schema/validation checks), and
-- **Rubric score ≥ 4.5/5.0** (A- or better), and
+- **Rubric score ≥ 4.5/5.0** (grade A), and
 - **No P1 findings** in a critic review
 
 The rubric: [references/agents-md-rubric.md](references/agents-md-rubric.md) (single source of truth).

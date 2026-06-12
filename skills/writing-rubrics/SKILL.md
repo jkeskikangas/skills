@@ -36,7 +36,7 @@ Do not use when:
 
 Target outcome:
 - **No spec violations**, and
-- **Weighted score ≥ 4.5/5.0** (A- or better), and
+- **Weighted score ≥ 4.5/5.0** (grade A), and
 - **No P1 findings** in a critic review
 
 The review prompt (contains scoring dimensions and review workflow): [references/review-prompt.md](references/review-prompt.md) (single source of truth for grading rubric documents).

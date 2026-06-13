@@ -47,3 +47,5 @@ Read-only: never edit the input files. No network. No secrets read.
 ```
 
 Why it would pass the rubric: triggerable (artifacts + scenarios + negative trigger), verifiable success (the Eval block’s checkable expected output, exercised by step 4), risk-proportional safety (read-only, no filler), determinism delegated to a script.
+
+**Ship the script too.** This example depends on `scripts/validate.py`; an author who copies the shape must also create that file. Without it, `SKILL.md` references a file that does not exist — a blocker (broken reference) — and the Eval block’s “exercised by step 4” claim is hollow. Inline a check that needs no external script, or ship the script.

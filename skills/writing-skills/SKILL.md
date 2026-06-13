@@ -4,7 +4,9 @@ description: >
   Creates or updates professional-grade agent skills (SKILL.md + optional scripts/references/assets) with
   strict validation and an iterative generator↔critic workflow. Use when: you want a new skill,
   want to refactor an existing skill for clarity/token-efficiency, or want to reach an A-grade rubric score.
-  Not for reviewing or grading an existing skill (use reviewing-skills).
+  Not for reviewing or grading a skill (use reviewing-skills), or for authoring rubrics (writing-rubrics),
+  specs (writing-specs), designs (writing-designs), or AGENTS.md (writing-agents-md).
+allowed-tools: Read, Write, Edit, Glob, Grep, Task, Bash(node:*), Bash(npm:*), Bash(npx:*), Bash(git:*)
 ---
 
 # Writing Skills
@@ -29,14 +31,12 @@ Do not use when:
 
 ## Quality Bar (default)
 
-Target the rubric's canonical `meets_bar`. **`reviewing-skills/references/skills-rubric.md` owns it and is authoritative — read it; do not maintain a simplified copy here** (a stale local subset is exactly how authors end up targeting the wrong, easier bar).
+Target the rubric's canonical `meets_bar`. **`reviewing-skills/references/skills-rubric.md` owns it and is authoritative — read it; do not maintain a simplified copy here** (a stale local subset is exactly how authors end up targeting the wrong, easier bar — so this file deliberately does *not* restate the thresholds).
 
-Headline gates (so you author toward them from the start — not the full definition):
-- **No spec violations / no open blockers**, and
-- **Weighted score ≥ 4.5/5.0** (grade A), and
-- **No P1 findings**, and
-- **Every dimension ≥ 3.5** — the bar is non-compensatory; one weak dimension fails it, and
-- **Behavioral probe run** (or a one-line skip reason recorded); for a skill encoding domain claims, the probe must check **outcome correctness**, not merely that the workflow was unblocked.
+The gate is **non-compensatory** (one weak dimension fails it regardless of the others). When you author toward it, keep in view the conditions easiest to forget while writing — the rubric defines each one and its exact threshold:
+- it is claimed only by a **full-depth** review;
+- a **behavioral probe** must have run (outcome-**correctness**, not just an unblocked workflow, for any skill encoding domain claims); and
+- a **gate-fragile** score (one plausible check flip would drop it below the gate) requires an **ensemble** review before the bar can be claimed.
 
 ## Safety / Constraints (non-negotiable)
 
@@ -94,6 +94,8 @@ Classify before writing, then spend the SKILL.md budget where the weights and *c
 - **Tool-wrapper** — wraps scripts/CLIs; safety + evaluability dominate (≈40% combined).
 - **Orchestrator** — composes skills/agents; loop quality + hand-offs dominate.
 
+If a skill is genuinely **between two archetypes**, author to the higher-weighted profile of the two and note the ambiguity — the critic scores under both profiles and reports if the grade flips (rubric, "Archetype profiles").
+
 Two checks are **critical** — a FAIL caps that dimension at 3.0 no matter how tidy the prose, so satisfy them first:
 - **Triggerable** — a strong positive trigger exists (Dimension 2). You will self-test it in Step 5.
 - **Verifiable success** — a stated way to tell the skill worked: eval scenario, acceptance check, or expected output (Dimension 6).
@@ -119,7 +121,7 @@ Hard requirements:
 - Include **guardrails** and explicit “do not do” rules when relevant.
 - Include **validation loops** (what to check after writing/running).
 - Ship **eval material**: at least one concrete input + a checkable expected output, exercised by a workflow validation step. Decorative scenarios (no expected output, never referenced) fail the rubric and count as bloat — make it real or omit it.
-- **Calibrate degrees of freedom:** exact commands/templates for fragile steps; judgment plus acceptance criteria for heuristic steps.
+- **Calibrate degrees of freedom:** a step is **fragile** when a small wording change breaks the output or correctness can't be eyeballed (parsing, formatting, exact CLI flags, version pins) — give it an exact command/template. A step is **heuristic** when a competent agent can pick among acceptable options — give it judgment plus acceptance criteria.
 - Keep SKILL.md lean: body under ~500 lines (far fewer preferred — it is measured); move bulk examples/specs to `references/`.
 
 **Engineer the description for routing** (highest-leverage element — a *critical* check, stress-tested by a trigger battery):
@@ -152,13 +154,17 @@ Use [references/resource-patterns.md](references/resource-patterns.md):
 - Outside this repo: `npx @jkeskikangas/skillcheck@0.2.4 <skill-dir>` (pinned). There is no unscoped `skillcheck` package — **do not run `npx skillcheck`** (it resolves to an unrelated package). If unavailable, run the deterministic checks manually and note the fallback.
 
 **agnix** (specification rules — third-party linter that downloads and executes code):
-- Run only with **explicit user opt-in**, pinned (`npx agnix@<pinned-version> <skill-dir>`); disclose the external execution in the deliverable. If the user declines, skip it and note the gap.
+- Run only with **explicit user opt-in** and pinned to a specific released version you have vetted — never unpinned (a bare `npx agnix` pulls latest and can execute changed code). Disclose the external execution in the deliverable. If the user declines, skip it and note the gap.
 
 Fix all reported errors before proceeding. Each linter collects every violation in a single run.
 
 ### 8) Quality Gate
 
-Two-phase review after validation. Target: the rubric's `meets_bar` (Quality Bar above).
+Review after validation. Target: the rubric's `meets_bar` (Quality Bar above). You authored against the rubric and its vignettes, so optimizing only to them is Goodhart-prone — two defenses are non-negotiable: a user-outcome pre-check (Phase 0) and a held-out probe the score cannot absorb (Phase 2).
+
+#### Phase 0: User-outcome pre-check (a skill can pass the rubric and still be bad)
+
+Before any scoring, answer in one short trace, *independent of the rubric*: handed this skill and a real in-scope task, would a user get a **correct, faster** outcome than without it? If you cannot produce a concrete passing trace — or the honest answer is "it satisfies the checklist but wouldn't actually help" — the skill is not done at any score. Fix the **skill**, not the trace. Record this judgment in the deliverable.
 
 #### Phase 1: Self-critic (cheap catch-pass — cannot claim the bar)
 
@@ -175,31 +181,40 @@ Fix what is fixable inline; flag what needs re-analysis or user input. Then go t
 
 Run `$reviewing-skills` in a **fresh context** (its scores are blind only without your authoring context):
 - If your environment supports subagents, **spawn a fresh-context subagent** and give it the skill path.
-- Otherwise, invoke `$reviewing-skills` directly and provide the path.
-- If `$reviewing-skills` is not available, self-review against the 7 rubric dimensions and note the gap in the deliverable.
+- **Held-out signal (do not tune to the rubric):** before declaring the gate met, run at least one fresh adversarial probe *not derived from the rubric or its vignettes* — a novel in-the-wild request the skill was not written against — and weight a failure there above the weighted score (`$reviewing-skills` applies the matching held-out rule from its side). Never treat the canonical vignettes as authoring targets.
+- **Independence guard — claiming the bar needs a fresh context.** If you must run `$reviewing-skills` *inline* (no subagent) or *self-review* (critic unavailable), the verdict is author-contaminated: you may **not** assert `meets_bar` / "professional-grade". Mark the result `bar-unclaimed`, list which independence guarantees degraded, and recommend a separate-session review.
 - If the skill is git-tracked and you changed it, require the critic to cite the relevant diff hunk or commit short-hash for any change-driven P1/P2 findings.
 
 Drive the loop with the critic's machine-readable verdict — do not re-review from scratch each pass:
-1. First iteration: **full** review → consume the JSON `findings` array; apply fixes by id, **P1 then P2** (P3 last).
+1. First iteration: **full** review → consume the JSON `findings` array; apply fixes by id, **P1 then P2** (P3 last). Do **not** comply blindly: if you judge a finding a false positive, re-open its cited evidence first; if it does not reproduce, record a dispute note and ask the critic to re-examine that check (verdict-stability) rather than mutating the skill to satisfy a phantom finding.
 2. Between iterations: re-run `$reviewing-skills` in **triage** depth (blockers/P1 only — cheap) or **incremental** depth (diff-scoped scores against the prior `reviewed_commit`).
 3. Re-run validation after each fix round.
 4. Finish with a **full** review to confirm `meets_bar` — triage/incremental can never claim the gate.
 
-Repeat up to **3 loops**; stop early when the bar is met or two consecutive iterations show no score improvement (plateau).
+Repeat up to **3 loops**; stop early when the bar is met or two consecutive iterations show no score improvement (plateau). Match rigor to stakes: a low-stakes skill may need only one full review; reserve the full ladder (and ensemble) for gated or shared skills.
 
 ### 9) Finalize
 
-Deliver:
+If the final full review did **not** return `meets_bar: true` — a plateau or loop-cap stop, an unresolved P1, a failed Phase 0, a held-out-probe failure, or a `bar-unclaimed` contaminated verdict — the skill is **below bar**. You **MUST NOT** present it as done or “professional-grade”: lead the deliverable with `BELOW BAR — <failing dimension / P1 / unmet gate condition>` and the smallest remaining change. Do not let the `agents/openai.yaml` “until it reaches an A grade” framing imply a success it did not reach.
+
+On a met bar, deliver:
 - The final skill folder path(s)
 - Any suggested follow-on skills (from the split proposal)
-- A short note explaining why the skill will trigger correctly (tie to description “when to use”), including the Step 5 self-test routing result
+- A short note on why the skill will trigger correctly (tie to description “when to use”), including the Step 5 self-test routing result and the Phase 0 user-outcome trace.
 
 ## Edge Cases
 
 - **User provides no skill name or path:** ask before proceeding; do not guess.
 - **Target directory already has a SKILL.md:** enter update mode; do not overwrite without confirmation.
 - **Linters not available (no Node.js / npx):** warn the user; skip validation but note it was skipped in the deliverable.
-- **`$reviewing-skills` not available:** self-review against the 7 dimensions and state in the deliverable that no fresh-context critic ran.
+- **`$reviewing-skills` not available:** self-review against the 7 dimensions, mark the result `bar-unclaimed`, and state in the deliverable that no fresh-context critic ran (a contaminated self-review cannot claim `meets_bar`/professional-grade).
+
+## Eval
+
+This skill's own check (exercised by Step 5 and Step 8):
+- **Input:** the rough prompt “make my SQL queries faster”, with no skill name or path given.
+- **Expected output:** Step 1 asks for a skill name/path before scaffolding (no guessing); the scaffolded skill ships strong positive **and** negative triggers plus its own Eval block with a checkable expected output; and the Step 8 fresh-context `$reviewing-skills` verdict returns `meets_bar: true` with Dimension 2 (triggering) ≥ 4 and no P1.
+- **Exercised by:** the Step 5 routing self-test (triggers) and the Step 8 Quality Gate (the verdict is the pass/fail signal).
 
 ## Output Rules
 

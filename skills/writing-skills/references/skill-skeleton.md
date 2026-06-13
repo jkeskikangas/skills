@@ -23,6 +23,6 @@ Use this as the default structure for new skills. Delete any section that is not
 - Bullets over paragraphs.
 - Prefer directives (“Do X. Never do Y.”) over descriptions.
 - Calibrate degrees of freedom:
-  - fragile steps: exact commands/templates
-  - heuristic steps: allow judgment, but include acceptance criteria
+  - fragile (a small wording change breaks the output, or correctness can't be eyeballed — parsing, formatting, exact CLI flags, version pins): exact commands/templates
+  - heuristic (a competent agent can pick among acceptable options): allow judgment, but include acceptance criteria
 

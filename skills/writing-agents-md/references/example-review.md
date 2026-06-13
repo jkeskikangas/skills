@@ -1,23 +1,25 @@
 # Example Review
 
-Review of the Next.js + Prisma AGENTS.md example from `references/example-output.md`. This demonstrates the review output format with realistic scores and findings.
+Review of the Next.js + Prisma AGENTS.md example from `references/example-output.md`. This demonstrates the **rubric-pass** output format (from `references/review-prompt.md`); in the full Quality Gate a rubric-free **blind pass** (`references/independent-critic.md`) also runs first, and any uncovered risk it finds is escalated into the fix list.
+
+The weighted total below is recomputed from the dimension scores using the rubric formula — `(D1*0.25)+(D2*0.20)+(D3*0.15)+(D4*0.15)+(D5*0.10)+(D6*0.10)+(D7*0.05)` = `1.25+0.90+0.75+0.75+0.45+0.45+0.25` = **4.80**.
 
 ```markdown
 # AGENTS.md Review
 
-## Overall Grade: B (4.0/5.0)
+## Overall Grade: A (4.8/5.0)
 
 ## Dimension Scores
 
 | Dimension | Score | Notes |
 |-----------|-------|-------|
-| Critical Rules & Guardrails | 4.5/5 | Strong MUST/NEVER/ON FAIL coverage; minor gap in force-push rule |
-| Codebase Context & Domain | 4.5/5 | Clear goal, type, terms; missing architecture note |
-| Structure & Navigation | 4/5 | All dirs annotated; no generated dir markers |
-| Commands & Workflows | 4.5/5 | Full command set with ON FAIL; all copy-pasteable |
-| Code Conventions & Patterns | 4/5 | Module/Async/Naming present; framework patterns well documented |
-| Git & CI/CD Workflow | 3/5 | Branch + hooks present; commit format vague, no CI section |
-| Clarity & Maintainability | 4/5 | Clean structure, within budget; schema version present |
+| Critical Rules & Guardrails | 5/5 | MUST/NEVER/ON FAIL complete; named danger guards for migrate reset + local deploy |
+| Codebase Context & Domain | 4.5/5 | Clear goal, type, terms, stack; architecture style (monolith) not stated explicitly |
+| Structure & Navigation | 5/5 | All dirs annotated; generated dirs (`src/generated/prisma/`, `.next/`) marked |
+| Commands & Workflows | 5/5 | Full command set, copy-pasteable, per-command non-destructive ON FAIL |
+| Code Conventions & Patterns | 4.5/5 | Module/Async/Naming + framework patterns with locations |
+| Git & CI/CD Workflow | 4.5/5 | Branch, commit format w/ example, hooks, CI section; no PR template/code-owners path |
+| Clarity & Maintainability | 5/5 | Scannable, 135 lines (under budget), internally consistent, schema tag present |
 
 ## Verification Results
 
@@ -27,87 +29,34 @@ Review of the Next.js + Prisma AGENTS.md example from `references/example-output
 | Structure paths exist | SKIP | No project files available |
 | Patterns match source | SKIP | No project files available |
 | Env versions accurate | SKIP | No project files available |
-| CRITICAL constraints grounded | PASS | `pnpm` mandate consistent with lock file assumption; Prisma generated path in NEVER |
+| CRITICAL constraints grounded | PASS | `pnpm` mandate consistent with lock-file assumption; generated path in NEVER; migrate-reset and local-deploy guards name the exact commands |
 | Domain terms in codebase | SKIP | No project files available |
 | Security paths in .gitignore | SKIP | No project files available |
 
 ## Strengths
 
-- **Comprehensive CRITICAL section** — covers package manager mandate, lint/test gates, generated file protection, and tool preferences with both MUST and NEVER rules.
-- **Per-command ON FAIL recovery** — every non-trivial command has a concrete recovery step, including the destructive-action warning on `prisma migrate reset`.
+- **Complete CRITICAL section** — package-manager mandate, competing-manager NEVER, force-push, hook bypass, secret access, and generated-file edits all covered with both MUST and NEVER rules.
+- **Named danger guards** — destructive tools are guarded by the exact command: `NEVER: run pnpm prisma migrate reset outside local dev` and `NEVER: deploy from local (vercel --prod)`. No destructive command appears as an ON FAIL recovery.
+- **Per-command ON FAIL recovery** — every non-trivial command has a concrete, non-destructive recovery step.
+- **Generated code routed correctly** — `prisma generate` output is marked generated in Structure, mapped in Data & State, and protected in CRITICAL.
 - **Domain terms with disambiguation** — `Workspace` and `Metric` are defined with project-specific meanings that prevent agent misinterpretation.
-- **Convention sub-items in Patterns** — Module, Async, and Naming explicitly stated before framework-specific patterns.
-- **Data & State section** — cleanly separates schema source of truth, ORM, and migration paths.
 
 ## Findings
 
-### P2 — Commit format is vague
-- **Impact:** Agent uses generic conventional commit format without project-specific prefixes or scope conventions.
-- **Current state:** `Commit: Conventional Commits` — no examples or project-specific rules.
-- **Recommendation:** Add format with examples.
-- **Example:**
-  ```
-  # Before
-  - Commit: Conventional Commits
+### P3 — Architecture style not stated explicitly
+- **Impact:** Minor. Agent infers a single Next.js app but the file never says monolith vs. multi-service, which can matter when adding cross-cutting code.
+- **Current state:** `Type: Application` is present; no explicit architecture style.
+- **Recommendation:** Add to Domain & Context: `- Architecture: monolith (single Next.js app)`.
 
-  # After
-  - Commit: `<type>(<scope>): <subject>` — types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`. Scope: component or module name (e.g., `feat(auth): add SSO login`).
-  ```
-
-### P2 — No CI section
-- **Impact:** Agent doesn't know what checks run on push/PR, may submit code that fails CI.
-- **Current state:** CI section is absent. PR requirements mention "passing CI" without defining what CI runs.
-- **Recommendation:** Add CI section with jobs and required checks.
-- **Example:**
-  ```markdown
-  ## CI
-
-  - Runs: lint, test:unit, test:e2e, build, type-check
-  - Required checks: All must pass for merge
-  - Artifacts: Playwright report in CI artifacts
-  ```
-
-### P2 — Missing force-push NEVER rule
-- **Impact:** Agent could force-push to shared branches, destroying team history.
-- **Current state:** CRITICAL has no force-push prohibition.
-- **Recommendation:** Add `- NEVER: Force push (git push --force, git push -f) to shared branches` to CRITICAL.
-
-### P2 — Generated directories not marked in Structure
-- **Impact:** Agent may edit generated Prisma client files or build output.
-- **Current state:** Structure lists `prisma/` but doesn't distinguish generated output. CRITICAL has NEVER rule for `src/generated/prisma/` but this path doesn't appear in Structure.
-- **Recommendation:** Add generated dirs to Structure.
-- **Example:**
-  ```
-  src/generated/prisma/ # Prisma client (generated -- do not edit)
-  .next/                # Build output (generated -- do not edit)
-  ```
-
-### P3 — No ON FAIL for lint in CRITICAL
-- **Impact:** Minor — Commands section has lint ON FAIL, but CRITICAL's ON FAIL (lint) line is absent. Agent may miss recovery when following CRITICAL rules directly.
-- **Current state:** CRITICAL has generic ON FAIL and test-specific ON FAIL, but no lint-specific ON FAIL.
-- **Recommendation:** Add `- ON FAIL (lint): pnpm lint --fix && pnpm lint. Fix remaining errors manually.`
-
-### P3 — Security section missing CI secrets mechanism
-- **Impact:** Agent writing CI config doesn't know how secrets are provided.
-- **Current state:** `Secrets via: environment variables (Vercel)` — covers deployment but not CI.
-- **Recommendation:** Add `- CI secrets: GitHub Actions secrets` (or whatever the project uses).
-
-### P3 — No Debugging section
-- **Impact:** Agent has no guidance on log access, REPL, or debugger attachment. Minor for most tasks.
-- **Current state:** Section absent.
-- **Recommendation:** Optional addition if within line budget:
-  ```markdown
-  ## Debugging
-
-  - Logs: `pnpm dev` console output; browser DevTools for client
-  - REPL: `node --experimental-repl-await`
-  - Debugger: VS Code "Next.js: debug" launch config
-  ```
+### P3 — PR conventions lack a template/owners path
+- **Impact:** Minor. Agent opening a PR doesn't know about a template or required reviewers for sensitive areas.
+- **Current state:** `PR: Require passing CI + 1 approval` — no template path or reviewer conventions.
+- **Recommendation:** If the repo has them, add `- PR template: .github/PULL_REQUEST_TEMPLATE.md` and `- Reviews: DB migrations require DBA review`.
 
 ## Token Efficiency
 
-- **Line count:** 126 lines (slightly over 120-line single-package budget)
-- **Redundancies:** Migration commands appear in both Data & State and Commands. Data & State could reference Commands instead of duplicating.
-- **Trimmable:** Execution Context `Prefix: N/A` line adds no value for Host-only projects. Remove if reclaiming lines.
+- **Line count:** 135 lines (under the 150-line single-package budget).
+- **Redundancies:** None — migration/seed commands live only in Commands; Data & State references them by path.
+- **Trimmable:** `Execution Context > Prefix: N/A` adds little for Host-only projects; remove if reclaiming lines.
 - **Densifiable:** Already dense. No prose sections to compress.
 ```

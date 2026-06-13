@@ -45,12 +45,12 @@ The rubric: [references/agents-md-rubric.md](references/agents-md-rubric.md) (si
 
 Execute these steps to gather facts. Do NOT include analysis output in the final file.
 
-**Priority & triage:** When context or time is limited, focus effort in this order:
-- **P0 (must):** CRITICAL section accuracy, Commands correctness, Structure validity
-- **P1 (should):** Domain & Context, Patterns, Testing Strategy, Security, Env. **If workspace config detected** (turbo.json, nx.json, pnpm-workspace.yaml, workspaces in package.json, `[workspace]` in Cargo.toml, go.work): promote Monorepo to P1.
-- **P2 (nice-to-have):** Monorepo (unless promoted), CI, Tool Preferences, Search, Git, Debugging
+**Priority & triage:** When context or time is limited, focus effort in this order. These **T-levels rank sections** and are distinct from the **P1/P2/P3** ranking of *review findings* in the rubric — do not conflate the two.
+- **T0 (must, never dropped):** CRITICAL section accuracy, Commands correctness, Structure validity, **Security**
+- **T1 (should):** Domain & Context, Patterns, Testing Strategy, Env. **If workspace config detected** (turbo.json, nx.json, pnpm-workspace.yaml, workspaces in package.json, `[workspace]` in Cargo.toml, go.work): promote Monorepo to T1.
+- **T2 (nice-to-have):** Monorepo (unless promoted), CI, Tool Preferences, Search, Git, Debugging
 
-When output exceeds line budget, drop sections in reverse priority: P2 first (Debugging -> CI -> Git -> Search -> Tool Preferences -> Monorepo), then P1 (Env -> Security -> Testing Strategy -> Patterns -> Domain & Context). P0 sections are never dropped. Within a priority level, prefer keeping sections with more concrete content.
+When output exceeds line budget, drop sections in reverse priority: T2 first (Debugging -> CI -> Git -> Search -> Tool Preferences -> Monorepo), then T1 (Env -> Testing Strategy -> Patterns -> Domain & Context). **T0 sections are never dropped — a line budget must never silence Security or any safety content.** Within a priority level, prefer keeping sections with more concrete content.
 
 **Targeted update:** If user requests update to specific section(s), run only the analysis steps relevant to those sections. Skip full re-analysis. Validate only the changed sections plus CRITICAL (always re-validated).
 
@@ -94,7 +94,7 @@ Also check for pre-existing agent context files (`.cursorrules`, `.windsurfrules
 
 **Domain term extraction:** Scan README (headings, bold/italic terms, glossary sections), doc comments in entry points, and config descriptions for domain-specific terms (acronyms, business concepts, project-specific jargon). Include terms that appear in code identifiers and would be ambiguous to an agent without context (e.g., `Workspace` meaning "tenant" not "IDE workspace"). Omit universally understood terms (API, URL, JSON). If no domain terms found, omit the Key Terms field.
 
-**No existing AGENTS.md:** Infer all sections from project files. Populate only sections with concrete evidence. **Minimum viable output:** CRITICAL, Domain & Context, and Commands must all have concrete content. If Commands would be empty, do not generate — inform user the project lacks enough structure.
+**No existing AGENTS.md:** Infer all sections from project files. Populate only sections with concrete evidence. **Minimum viable output:** the T0 sections — CRITICAL, Commands, and Structure — must all have concrete content (this matches the never-dropped set in Priority & triage). Populate Domain & Context whenever a purpose/type is inferable. If Commands would be empty, do not generate — inform user the project lacks enough structure.
 
 ### 1. Detect Stack & Identify Constraints
 
@@ -216,6 +216,7 @@ See `references/example-output.md` for a concrete Next.js + Prisma example.
 - NEVER: [forbidden tool/pattern]
 - NEVER: Force push (`git push --force`, `git push -f`) to shared branches
 - NEVER: Skip pre-commit hooks (--no-verify)
+- NEVER: Commit or read secrets (`.env`, API keys, tokens, private keys)
 - NEVER: Edit generated files in `[path]`
 - PREFER: Built-in tools (file reader, editor, glob, grep) over shell equivalents (`cat`, `sed`, `find`, `grep`)
 - ON FAIL: Read full error output before retry. Check Env for missing deps.
@@ -277,7 +278,7 @@ See `references/example-output.md` for a concrete Next.js + Prisma example.
 [exact command]                # ON FAIL: [recovery step]
 ```
 
-**ON FAIL comments:** Every command must include an inline `# ON FAIL: ...` comment with a concrete recovery step. Use the command's actual fix/retry mechanism (e.g., `# ON FAIL: rm -rf node_modules && pnpm install`). If no programmatic recovery exists, state the diagnostic step (e.g., `# ON FAIL: check output for type errors`). Omit ON FAIL only for commands where failure is self-explanatory (e.g., `dev` server start).
+**ON FAIL comments:** Every command must include an inline `# ON FAIL: ...` comment with a concrete recovery step. Use the command's actual fix/retry mechanism (e.g., `# ON FAIL: rm -rf node_modules && pnpm install`). If no programmatic recovery exists, state the diagnostic step (e.g., `# ON FAIL: check output for type errors`). Omit ON FAIL only for commands where failure is self-explanatory (e.g., `dev` server start). **Never** use a destructive command (data-dropping reset, force-push, publish) as an `# ON FAIL:` recovery step — if the only recovery is destructive, omit ON FAIL and rely on the named danger guard in CRITICAL/Security instead.
 
 ## Structure
 
@@ -397,7 +398,7 @@ After approval, write `AGENTS.md` and create or update `CLAUDE.md` in the same d
 
 ### Other agent context files
 
-On user request only, generate equivalent files: `.cursorrules`/`.windsurfrules` (inline content), `GEMINI.md`/`CODEX.md`/`.github/copilot-instructions.md` (copy content). All include sync header `<!-- source: AGENTS.md @ [git-short-sha] -->` (if not a git repo, use `<!-- source: AGENTS.md -->`). AGENTS.md is source of truth — regenerate derived files on update. No symlinks.
+On user request only, generate equivalent files: `.cursorrules`/`.windsurfrules` (inline content), `GEMINI.md`/`CODEX.md`/`.github/copilot-instructions.md` (copy content). All include the stable sync header `<!-- source: AGENTS.md -->` — no git sha or timestamp, so a derived file stays byte-identical when AGENTS.md content is unchanged (a git-sha header would diff on every commit and break idempotency). AGENTS.md is source of truth — regenerate derived files on update. No symlinks.
 
 **Agent-specific adjustments:** When generating for non-Claude agents, adapt Tool Preferences to that agent's capabilities (e.g., Cursor uses terminal commands; Copilot uses inline suggestions). Replace Claude-specific tool names (Read/Edit/Glob/Grep) with generic equivalents or that agent's tool names.
 
@@ -406,7 +407,7 @@ On user request only, generate equivalent files: `.cursorrules`/`.windsurfrules`
 After writing, verify:
 
 **Structural checks (1-10):**
-1. **Commands exist** — grep each command's binary/script name in build config to confirm traceability
+1. **Commands exist & are defined** — grep each command's binary/script name in build config to confirm traceability, AND confirm the referent is actually *defined*, not merely named: the npm/pnpm script body is non-empty, the `Makefile`/`Justfile`/`Taskfile` target exists, or the binary resolves to a dependency, a `bin/` entry, or a documented external tool. A command that names a script with an empty or missing body fails this check — flag with `<!-- REVIEW: command [x] not defined in config -->`. (Tracing the name is necessary but not sufficient: do NOT execute the command to test it.)
 2. **Structure matches** — glob each listed directory to confirm it exists on disk
 3. **No placeholders** — no `[value]` brackets remain
 4. **No stale comments** — no HTML comments remain except: `<!-- agents-md-version: N -->`, `<!-- GAPS: ... -->`, `<!-- REVIEW: ... -->`, `<!-- REMOVED: ... -->`, and `<!-- version: YYYY-MM-DD -->`
@@ -437,7 +438,7 @@ Grade the generated AGENTS.md using [references/agents-md-rubric.md](references/
 **Check for:**
 1. **Ambiguous CRITICAL rules** — any MUST/NEVER that an agent could reasonably misinterpret. Test: could two competent developers disagree on what this rule requires? If yes, make it more specific.
 2. **Cross-section contradictions** — commands referenced in CRITICAL but absent from Commands; tools in Commands not mentioned in Env; paths in Structure not matching paths in other sections.
-3. **Missing danger guards** — for each risky tool detected in Step 1 (database, IaC, deployment, package publishing), verify CRITICAL or Security contains a corresponding safeguard. Examples: DB detected but no migration safety rule; deploy tool detected but no "never deploy from local" rule; publish config detected but no "never publish without CI" rule.
+3. **Missing danger guards** — for each risky tool detected in Step 1 (database, IaC, deployment, package publishing), verify CRITICAL or Security contains a corresponding safeguard that **names the specific destructive command** and states the prohibition (a vague sentence like "be careful with migrations" fails this check). Examples: DB migrations detected -> `NEVER: run \`prisma migrate reset\` / \`drizzle-kit drop\` outside local dev (drops data)`; deploy tool detected -> `NEVER: deploy from local (\`vercel --prod\`) — deploy via CI only`; publish config detected -> `NEVER: \`npm publish\` from local — release via CI tag only`. Additionally, a destructive command must **never** appear as an `# ON FAIL:` recovery step (e.g., `migrate reset` as recovery); route it to a guarded, explicitly-warned command instead.
 4. **Unresolvable references** — terms used without definition, paths referencing external documentation without summarizing the relevant content, tool names without version or install context.
 
 **Actions:**
@@ -445,20 +446,26 @@ Grade the generated AGENTS.md using [references/agents-md-rubric.md](references/
 - Requires re-analysis or user input -> add `<!-- REVIEW: [description] -->` and continue.
 - If score < 4.5 or P1 findings remain, fix P1/P2 gaps and re-run Validation checks before proceeding.
 
-### Phase 2: Fresh-context subagent review
+### Phase 2: Fresh-context critic review
 
-Run a **fresh-context critic** pass using [references/review-prompt.md](references/review-prompt.md):
-- If your environment supports subagents, **spawn a fresh-context subagent** with the review prompt. Otherwise, perform the review directly following the prompt instructions.
-- Apply **P1 + P2** fixes (P3 last).
+Run a **fresh-context critic** in two passes, so the verdict does not rest solely on this skill's own rubric (which the generator already optimizes toward, and whose blind spots a same-rubric critic shares):
+
+1. **Blind pass (rubric-free)** — using [references/independent-critic.md](references/independent-critic.md), judge the file from first principles as an agent about to do real work. This pass must NOT see the rubric or its dimension names; it asks only "what would break, mislead, or endanger an agent that follows this file?" Its job is to surface risks the rubric does not encode.
+2. **Rubric pass** — using [references/review-prompt.md](references/review-prompt.md), score and grade against the shared rubric.
+3. **Reconcile** — every blind-pass risk the rubric pass did NOT already cover is escalated into the fix list at its blind-pass severity (an uncovered risk is evidence of a rubric gap, not proof the risk is minor).
+
+Execution:
+- If your environment supports subagents, **spawn a fresh-context subagent** for each pass (the blind pass must not receive the rubric in its context). Otherwise, perform the passes directly — but in-context review is not independent: prepend `<!-- REVIEW: graded in-context; no independent critic ran -->` to the generated AGENTS.md and disclose it in the user summary.
+- Apply **P1 + P2** fixes plus every escalated blind-pass risk (P3 last).
 - Re-run Validation checks.
 - Repeat up to **3 loops**, stop early when the Quality Bar is met.
-- If 3 loops pass without meeting the bar: report remaining P1/P2 findings to the user with patch text and ask whether to apply fixes or accept as-is.
+- If 3 loops pass without meeting the bar: report the **actual grade** and remaining P1/P2 findings to the user with patch text and ask whether to apply fixes or accept as-is. **Never present an accepted-as-is or sub-bar file as grade-A or "meets bar"** — state the real grade and the unmet findings.
 
 ## Output Rules
 
 1. **Minimal prose** — bullets/tables preferred; no placeholders (resolve or omit section); no examples (actual values only)
 2. **Line budget** — omit lowest-priority sections first (see triage order); ASCII only (no emoji)
 3. **Safety** — Safety / Constraints rules apply (no secrets, no web, no destructive commands)
-5. **Idempotency** — identical output on unchanged project (no timestamps, random values); deterministic alphabetical ordering
-6. **Tool priority** — use built-in file reader, glob, and grep tools as the PRIMARY method; Bash commands are FALLBACKS — use only when the agent lacks built-in equivalents
-7. **Resilience** — skip unreadable configs (including permission-denied errors), empty globs, binary files, and sections with no concrete data — never fabricate values. If analysis is incomplete, add `<!-- GAPS: [list of skipped categories] -->` as the first line of AGENTS.md
+4. **Idempotency** — identical output on an unchanged project: no timestamps, git shas, or random values; sections emitted in the fixed template order; table rows and CRITICAL bullets ordered deterministically. Re-running on unchanged content produces a byte-identical file.
+5. **Tool priority** — use built-in file reader, glob, and grep tools as the PRIMARY method; Bash commands are FALLBACKS — use only when the agent lacks built-in equivalents
+6. **Resilience** — skip unreadable configs (including permission-denied errors), empty globs, binary files, and sections with no concrete data — never fabricate values. If analysis is incomplete, add `<!-- GAPS: [list of skipped categories] -->` as the first line of AGENTS.md

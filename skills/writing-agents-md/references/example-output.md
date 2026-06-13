@@ -13,10 +13,15 @@ Reference example of a completed AGENTS.md for a Next.js + Prisma application.
 - MUST: `pnpm test` before PR
 - MUST: Use `pnpm add`/`pnpm remove` to change deps (DO NOT edit package.json manually)
 - NEVER: `npm`, `yarn`, `bun`
+- NEVER: Force push (`git push --force`, `git push -f`) to shared branches
 - NEVER: Skip pre-commit hooks (--no-verify)
+- NEVER: Commit or read secrets (`.env.local`, `DATABASE_URL`, `NEXTAUTH_SECRET`)
 - NEVER: Edit generated files in `src/generated/prisma/`
+- NEVER: run `pnpm prisma migrate reset` outside local dev (drops all data)
+- NEVER: deploy from local (`vercel --prod`) -- deploy via Git push to Vercel only
 - PREFER: Built-in tools (file reader, editor, glob, grep) over shell equivalents
 - ON FAIL: Read full error output before retry. Check Env for missing deps.
+- ON FAIL (lint): `pnpm lint --fix && pnpm lint`. Fix remaining errors manually.
 - ON FAIL (test): Run single test file first: `pnpm vitest run src/path/to/file.test.ts`
 
 ## Domain & Context
@@ -33,8 +38,9 @@ Reference example of a completed AGENTS.md for a Next.js + Prisma application.
 - Source of Truth: `prisma/schema.prisma`
 - Database: PostgreSQL
 - ORM/Driver: Prisma
-- Migrations: `pnpm prisma migrate dev`
-- Seeding: `pnpm prisma db seed`
+- Migrations: `prisma/migrations/` (commands in Commands)
+- Seeding: `prisma/seed.ts` (commands in Commands)
+- Codegen: `pnpm prisma generate` -> `src/generated/prisma/` (generated -- do not edit)
 
 ## Execution Context
 
@@ -58,7 +64,7 @@ pnpm lint                      # ON FAIL: pnpm lint --fix && pnpm lint
 # format
 pnpm prettier --write .        # ON FAIL: check prettier config for parser errors
 # db:migrate
-pnpm prisma migrate dev        # ON FAIL: pnpm prisma migrate reset (WARNING: drops data)
+pnpm prisma migrate dev        # ON FAIL: inspect the failed migration; resolve drift with `pnpm prisma migrate resolve`
 # db:seed
 pnpm prisma db seed            # ON FAIL: check prisma/seed.ts for errors
 # build
@@ -68,12 +74,14 @@ pnpm build                     # ON FAIL: check output for type errors
 ## Structure
 
 ```
-src/app/         # Next.js app router pages
-src/components/  # React UI components
-src/lib/         # Shared utilities and config
-src/server/      # Server-side logic and API
-prisma/          # Schema and migrations
-tests/           # Playwright E2E tests
+src/app/              # Next.js app router pages
+src/components/       # React UI components
+src/lib/              # Shared utilities and config
+src/server/           # Server-side logic and API
+src/generated/prisma/ # Prisma client (generated -- do not edit)
+prisma/               # Schema and migrations
+tests/                # Playwright E2E tests
+.next/                # Build output (generated -- do not edit)
 ```
 
 ## Patterns
@@ -100,6 +108,7 @@ tests/           # Playwright E2E tests
 - NEVER read/write: `.env`, `.env.local`, `*.pem`
 - NEVER log/commit: `DATABASE_URL`, `NEXTAUTH_SECRET`, API keys
 - Secrets via: environment variables (Vercel)
+- CI secrets: GitHub Actions secrets
 
 ## Env
 
@@ -120,7 +129,13 @@ pnpm prisma migrate dev
 ## Git
 
 - Branch: `feat/`, `fix/`, `chore/`
-- Commit: Conventional Commits
+- Commit: `<type>(<scope>): <subject>` -- types: `feat`, `fix`, `chore`, `docs` (e.g., `feat(auth): add SSO`)
 - Hooks: lint-staged (ESLint + Prettier) via Husky
 - PR: Require passing CI + 1 approval
+
+## CI
+
+- Runs: lint, test:unit, test:e2e, build, type-check
+- Required checks: all green for merge
+- Artifacts: Playwright report
 ```

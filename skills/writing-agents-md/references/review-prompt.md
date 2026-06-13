@@ -24,7 +24,7 @@ Read the AGENTS.md, then gather enough project context to verify its claims. Do 
 | Domain terms | Grep term identifiers in source code to verify they exist |
 | Security paths | Verify `.gitignore` covers listed NEVER paths |
 
-**Budget:** Spend no more than ~20 verification reads. Prioritize CRITICAL, Commands, and Structure (most likely to be wrong or stale). If the project has no source code accessible, mark all checks as SKIP in the Verification Results table and note that source access was unavailable.
+**Budget:** Spend ~20 verification reads for a single-package repo; add ~5 reads per additional workspace package, capped at ~60. Prioritize CRITICAL, Commands, and Structure (most likely to be wrong or stale). In a monorepo, verify each package's claims rather than only the root — if the cap is reached before every package is covered, list the unverified packages in the report and mark the affected checks SKIP. If the project has no source code accessible, mark all checks as SKIP in the Verification Results table and note that source access was unavailable.
 
 **Safety (non-negotiable):**
 - Never read or request secrets (examples: `.env`, `.env.*`, `.npmrc`, `.pypirc`, `.netrc`, `id_rsa`, `*.pem`, `*.key`, credential dumps).

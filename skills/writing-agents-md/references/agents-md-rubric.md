@@ -107,6 +107,8 @@ Grade scale:
 | D | 1.5 – 2.49 |
 | F | < 1.5 |
 
+**Boundary sensitivity (do not over-trust the second decimal):** the weighted total is a sum of subjective half-point judgments — one dimension moving by 0.5 shifts the total by up to 0.125 (D1) or as little as 0.025 (D7), so a two-decimal total looks more measured than it is. Always report the total **and its distance to the nearest grade boundary**. When the total lands within **0.1 of a boundary** (e.g., 4.4–4.6 around the A cutoff), re-examine every dimension you scored at a half-point you were unsure of; if still uncertain after that pass, assign the **lower** band. Never round up into grade A to clear the bar.
+
 ## Findings Priority
 
 - **P1 (Critical):** likely to cause broken workflows, unsafe actions, or repeated failure loops.

@@ -55,8 +55,8 @@ Reference example of a completed AGENTS.md for a Next.js + Prisma application.
 pnpm install                   # ON FAIL: rm -rf node_modules && pnpm install
 # dev
 pnpm dev
-# test:unit
-pnpm vitest run                # ON FAIL: pnpm vitest run src/path/to/failing.test.ts
+# test
+pnpm test                      # ON FAIL: pnpm vitest run src/path/to/failing.test.ts
 # test:e2e
 pnpm playwright test           # ON FAIL: pnpm playwright test --ui for debugging
 # lint

@@ -4,8 +4,9 @@ description: >
   Writes (generates or updates) AGENTS.md — a token-efficient context file for AI coding agents.
   Analyzes project stack, constraints, and commands. Produces AGENTS.md and agent-specific
   imports (CLAUDE.md, .cursorrules, GEMINI.md, etc.). Preserves curated sections on update.
-  Use when: the user asks to create or update AGENTS.md, CLAUDE.md, or agent context files;
-  or to onboard an AI agent to a project.
+  Also reviews an existing AGENTS.md read-only (runs the bundled critic; writes nothing).
+  Use when: the user asks to create, update, or review AGENTS.md, CLAUDE.md, or agent context
+  files; or to onboard an AI agent to a project.
 compatibility: "Codex CLI, Claude Code/Desktop, Cursor, Windsurf, Gemini, GitHub Copilot (no dependencies)"
 ---
 
@@ -20,10 +21,20 @@ Generate or update the single source of truth for AI coding agents. `CLAUDE.md` 
 Use when:
 - The user asks to create or update AGENTS.md, CLAUDE.md, or agent context files (`.cursorrules`, `.windsurfrules`, `GEMINI.md`, `CODEX.md`, `.github/copilot-instructions.md`).
 - The user wants to onboard an AI agent to a project.
+- The user asks to **review, grade, or audit** an existing AGENTS.md — this skill is the entry point (there is no separate `reviewing-agents-md`): run the read-only critic in [references/review-prompt.md](references/review-prompt.md) plus the rubric-free blind pass in [references/independent-critic.md](references/independent-critic.md), report findings, and **do not generate, update, or write any file** unless the user then asks for fixes.
 
 Do not use when:
 - Single-file scripts, throwaway PoCs with no build config, or repos with only a README. Minimum: a build config file with at least one runnable command.
-- The user wants to review (not write) an existing AGENTS.md — run the read-only critic in [references/review-prompt.md](references/review-prompt.md) directly; do not generate or update the file.
+
+**Routing self-test** (does this request belong here?):
+
+| Request | Route |
+|---|---|
+| "create/update AGENTS.md, CLAUDE.md, or agent context files" | **Here** — write mode |
+| "review / grade / audit my AGENTS.md" | **Here** — read-only critic mode (no write) |
+| "write or refactor a skill (SKILL.md)" | `writing-skills` |
+| "review / grade a skill folder" | `reviewing-skills` |
+| "author a rubric / spec / design doc" | `writing-rubrics` / `writing-specs` / `writing-designs` |
 
 ## Quality Bar (default)
 
@@ -88,13 +99,15 @@ Also check for pre-existing agent context files (`.cursorrules`, `.windsurfrules
 
 **Staleness criteria:** Domain & Context is stale when README purpose/name changed, project type changed, or key terms reference absent identifiers. Security is stale when secret-loading mechanism changed, `.gitignore` patterns diverged, or new env templates have unlisted sensitive vars.
 
+**Forced re-verification (escape hatch):** the narrow staleness criteria above can let curated content that is *wrong but not stale-by-these-tests* survive every re-run (e.g., a concept renamed in code to another existing identifier). On an explicit user request to re-verify curated sections, or on a schema-version bump, re-derive Domain & Context and Security from source and **diff against the preserved copy**; surface the diffs for user confirmation rather than silently preserving. Do not auto-overwrite curated content on this path — present, then let the user decide.
+
 **Staleness removal:** Auto-detect sections: remove references to nonexistent tools/paths/commands. Hybrid sections: flag removed items with `<!-- REMOVED: [item] -- verify -->`.
 
 **Conflicts:** prefer project files; if uncertain, add `<!-- REVIEW: ... -->`.
 
 **Domain term extraction:** Scan README (headings, bold/italic terms, glossary sections), doc comments in entry points, and config descriptions for domain-specific terms (acronyms, business concepts, project-specific jargon). Include terms that appear in code identifiers and would be ambiguous to an agent without context (e.g., `Workspace` meaning "tenant" not "IDE workspace"). Omit universally understood terms (API, URL, JSON). If no domain terms found, omit the Key Terms field.
 
-**No existing AGENTS.md:** Infer all sections from project files. Populate only sections with concrete evidence. **Minimum viable output:** the T0 sections — CRITICAL, Commands, and Structure — must all have concrete content (this matches the never-dropped set in Priority & triage). Populate Domain & Context whenever a purpose/type is inferable. If Commands would be empty, do not generate — inform user the project lacks enough structure.
+**No existing AGENTS.md:** Infer all sections from project files. Populate only sections with concrete evidence. **Minimum viable output:** the T0 sections — CRITICAL, Commands, and Structure — must all have concrete content, plus **Security** whenever the project has any secret-bearing, deploy, publish, or migration surface (together these are the full never-dropped T0 set in Priority & triage). Populate Domain & Context whenever a purpose/type is inferable. If Commands would be empty, do not generate — inform user the project lacks enough structure.
 
 ### 1. Detect Stack & Identify Constraints
 
@@ -418,12 +431,13 @@ After writing, verify:
 9. **Commands minimum set** — `install`, `lint`, and at least one `test` command exist. Warn if missing
 10. **Constraint consistency** — every NEVER in CRITICAL traces to a detection in Step 1 (e.g., NEVER `pip` because `uv.lock` detected). Flag orphaned NEVERs with `<!-- REVIEW: no detection basis for NEVER [item] -->`
 
-**Quality checks (11-15):**
+**Quality checks (11-16):**
 11. **Specificity lint** — scan CRITICAL and Patterns for vague directives without adjacent concrete examples. Flag phrases like `follow conventions`, `use standard`, `as appropriate`, `see docs`, `when necessary`. Each directive must include either a command, path, or literal example. Add `<!-- REVIEW: add concrete example -->` to vague entries
 12. **Failure recovery coverage** — every command in the Commands code block (except `dev`/server-start commands) has an `# ON FAIL:` comment. Missing recovery comments: add `<!-- REVIEW: add ON FAIL for [command] -->`
 13. **Domain terms coverage** — if Domain & Context has a Key Terms list, verify each term appears in at least one other section (Structure, Patterns, Commands, or Data & State). Orphaned terms that appear nowhere else in the file: remove or add `<!-- REVIEW: term "[X]" unused in other sections -->`
 14. **Conventions minimum** — if Patterns section exists and the project has source code, verify it includes Module, Async, and Naming sub-items (or a subset appropriate to the detected stack). Missing conventions for detected stacks: add `<!-- REVIEW: detect [convention type] for [stack] -->`
 15. **No orphaned REVIEW comments** — verify every `<!-- REVIEW: ... -->` added during validation has a clear, actionable description. Remove any that were resolved during validation.
+16. **Safety floor enforced** — if Step 1 detected any secret-bearing, deploy, publish, or destructive-migration surface, the file MUST carry a Security section and/or a CRITICAL safeguard covering it. This is a **hard structural floor** (T0 in Priority & triage): a detected security surface with no guard is never acceptable, even under line budget. Missing: do not write — add the guard, or report to the user that the project has an unguarded security surface.
 
 **On failure:** Fix and re-validate. If fix requires re-analysis, remove the invalid entry. Never write a file that fails validation — report unresolvable failures to the user.
 
@@ -455,7 +469,7 @@ Run a **fresh-context critic** in two passes, so the verdict does not rest solel
 3. **Reconcile** — every blind-pass risk the rubric pass did NOT already cover is escalated into the fix list at its blind-pass severity (an uncovered risk is evidence of a rubric gap, not proof the risk is minor).
 
 Execution:
-- If your environment supports subagents, **spawn a fresh-context subagent** for each pass (the blind pass must not receive the rubric in its context). Otherwise, perform the passes directly — but in-context review is not independent: prepend `<!-- REVIEW: graded in-context; no independent critic ran -->` to the generated AGENTS.md and disclose it in the user summary.
+- If your environment supports subagents, **spawn a fresh-context subagent** for each pass (the blind pass must not receive the rubric in its context). Otherwise, perform the passes directly — but in-context review is not independent: prepend `<!-- REVIEW: graded in-context by the same model; no independent fresh-context critic ran -->` to the generated AGENTS.md and disclose it in the user summary.
 - Apply **P1 + P2** fixes plus every escalated blind-pass risk (P3 last).
 - Re-run Validation checks.
 - Repeat up to **3 loops**, stop early when the Quality Bar is met.
@@ -466,6 +480,6 @@ Execution:
 1. **Minimal prose** — bullets/tables preferred; no placeholders (resolve or omit section); no examples (actual values only)
 2. **Line budget** — omit lowest-priority sections first (see triage order); ASCII only (no emoji)
 3. **Safety** — Safety / Constraints rules apply (no secrets, no web, no destructive commands)
-4. **Idempotency** — identical output on an unchanged project: no timestamps, git shas, or random values; sections emitted in the fixed template order; table rows and CRITICAL bullets ordered deterministically. Re-running on unchanged content produces a byte-identical file.
+4. **Idempotency** — identical output on an unchanged project: no timestamps, git shas, or random values; sections emitted in the fixed template order; table rows and CRITICAL bullets ordered deterministically. `<!-- GAPS: ... -->` is keyed to categories with no evidence on disk, not to how much a given run happened to read — never add GAPS merely because a run's read budget was tighter. Re-running on unchanged content produces a byte-identical file.
 5. **Tool priority** — use built-in file reader, glob, and grep tools as the PRIMARY method; Bash commands are FALLBACKS — use only when the agent lacks built-in equivalents
 6. **Resilience** — skip unreadable configs (including permission-denied errors), empty globs, binary files, and sections with no concrete data — never fabricate values. If analysis is incomplete, add `<!-- GAPS: [list of skipped categories] -->` as the first line of AGENTS.md

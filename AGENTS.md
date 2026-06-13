@@ -6,11 +6,12 @@
 - MUST: `cd packages/skillcheck && npm ci` to install dependencies
 - MUST: `cd packages/skillcheck && npm run build` before running linter locally
 - MUST: Run both linters before commit: `node packages/skillcheck/bin/skillcheck.js skills/` and `npx agnix skills/`
-- MUST: `cd packages/skillcheck && npm test` before PR
+- MUST: `cd packages/skillcheck && npm test` before pushing to `main`
 - MUST: Use `npm install <pkg>` to change deps (DO NOT edit package.json manually)
 - MUST: Use `cd packages/skillcheck && npm version <patch|minor|major> && git push --follow-tags` to release (tag must match package.json version)
 - NEVER: Push a git tag manually without bumping `packages/skillcheck/package.json` first (CI will fail)
-- NEVER: Force push (`git push --force`, `git push -f`) to shared branches
+- NEVER: Create feature branches or open PRs — commit and push directly to `main`
+- NEVER: Force push (`git push --force`, `git push -f`) to `main`
 - NEVER: Skip pre-commit hooks (`--no-verify`)
 - NEVER: Edit files in `packages/skillcheck/dist/` (generated)
 - NEVER: Commit `.env` files, API keys, tokens, or credentials
@@ -103,9 +104,9 @@ NPM_TOKEN=<npm publish token, CI only>
 
 ## Git
 
-- Branch: `main`
-- Commit: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `docs:`)
-- PR: Both linters must pass; one skill or concern per PR
+- Branch: `main` only — commit and push **directly to `main`**; do NOT create feature branches or open PRs
+- Commit: Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `docs:`); one concern per commit
+- Gate: both linters must pass before every commit
 
 ## CI
 

@@ -23,7 +23,7 @@ Use when:
 
 Do not use when:
 - Single-file scripts, throwaway PoCs with no build config, or repos with only a README. Minimum: a build config file with at least one runnable command.
-- The user wants to review (not write) an existing AGENTS.md — use a reviewing skill instead.
+- The user wants to review (not write) an existing AGENTS.md — run the read-only critic in [references/review-prompt.md](references/review-prompt.md) directly; do not generate or update the file.
 
 ## Quality Bar (default)
 

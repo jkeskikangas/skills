@@ -9,6 +9,7 @@
 - MUST: `cd packages/skillcheck && npm test` before pushing to `main`
 - MUST: Use `npm install <pkg>` to change deps (DO NOT edit package.json manually)
 - MUST: Use `cd packages/skillcheck && npm version <patch|minor|major> && git push --follow-tags` to release (tag must match package.json version)
+- NEVER: `yarn`, `pnpm`, `bun` — repo uses npm (`packages/skillcheck/package-lock.json`)
 - NEVER: Push a git tag manually without bumping `packages/skillcheck/package.json` first (CI will fail)
 - NEVER: Create feature branches or open PRs — commit and push directly to `main`
 - NEVER: Force push (`git push --force`, `git push -f`) to `main`

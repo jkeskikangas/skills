@@ -1,6 +1,6 @@
 {
   "name": "@jkeskikangas/skillcheck",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Linter for agent skill directories",
   "type": "module",
   "bin": {

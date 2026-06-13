@@ -6,9 +6,12 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 
 - **Skill:** `./cleaning-csv-exports/`
 - **Archetype:** Workflow — a sequential clean/validate/report process; default profile applies. Classification was not in doubt (no alternate profile computed).
+- **Invocation model:** dispatched — no `disable-model-invocation`; the description is the routing surface.
 - **Review mode:** single
 - **Review depth:** full
-- **Behavioral probe:** not run
+- **Independence:** inline — first review of this artifact this session; no prior review in context.
+- **Behavioral probe:** not run (bar not claimed; offered as follow-up)
+- **Domain correctness:** not assessed — probe not run; grade is form-only (recorded as a maintenance note).
 - **Conflict of interest:** none (skill not authored in this conversation).
 
 ## Dimension Scores
@@ -26,8 +29,8 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 
 ## Check Results by Dimension
 
-- **Spec compliance:** checks 1–4, 6–8 PASS — SKILL.md:2-6, name `cleaning-csv-exports` matches directory; description 310 chars, third person, states what + when; no placeholders found. Check 5 FAIL — the when-clause stacks three near-synonym scenarios ("clean, tidy, or fix up") that add length, not information. Check 9 *(advisory)* PASS — gerund name. Base (7 + 0)/8 → 4.5; no adjustment → **4.5**.
-- **Trigger precision:** check 1 PASS — SKILL.md:4 names CSV exports as the artifact. Check 2 FAIL — no "not for" clause anywhere in the description. Check 3 PASS — no generic "helper/utils" terms. Check 4 PARTIAL — sibling import/export skills exist in the same repo and their descriptions were not examined for collisions. Check 5 N-A (no trigger battery run). Base (1 + 0 + 1 + 0.5)/4 = 0.625 → 3.5; no adjustment → **3.5**.
+- **Spec compliance:** checks 1–4, 6–8 PASS — SKILL.md:2-6, name `cleaning-csv-exports` matches directory; description 310 chars, third person, states what + when; no placeholders found. Check 5 FAIL — the when-clause stacks three near-synonym scenarios ("clean, tidy, or fix up") that add length, not information. Check 9 *(advisory)* — gerund name; informs nothing further, excluded from scoring. Base (7 + 0)/8 → 4.5; no adjustment → **4.5**.
+- **Trigger precision:** check 1 PASS — SKILL.md:4 names CSV exports as the artifact. Check 2 FAIL — no "not for" clause anywhere in the description. Check 3 PASS — no generic "helper/utils" terms. Check 4 PARTIAL — sibling import/export skills exist in the same repo and their descriptions were not examined for collisions. Check 5 *(advisory)* — no trigger battery run; excluded from scoring. Base (1 + 0 + 1 + 0.5)/4 = 0.625 → 3.5; no adjustment → **3.5**.
 - **Workflow quality:** checks 1, 3, 4, 6 PASS — SKILL.md:24-50, numbered discovery → plan → execution → validation phases with exact commands where fragile and a checkable validation step. Check 2 PARTIAL — no decision rule for unrecoverable rows: drop or flag is left to the agent (confirmed in the dry-run; drives P2-3). Check 5 FAIL — SKILL.md:41 "Iterate until the output looks good." has no stop condition (drives P1-1). Base (1 + 0.5 + 1 + 1 + 0 + 1)/6 = 0.75 → 4.0; no adjustment → **4.0**.
 - **Token efficiency:** checks 1, 3, 5 PASS — body 132 lines; references one level deep; no satisficing filler. Check 2 PARTIAL — encoding-repair details (SKILL.md:33-38) belong in a reference. Check 4 FAIL — SKILL.md:55-96 inline example duplicates references/example-output.md. Base (1 + 0.5 + 1 + 0 + 1)/5 = 0.7 → 3.8 → rounds to 4.0; no adjustment → **4.0**.
 - **Safety:** checks 1–4 PASS — risk surface is a single gated write: SKILL.md:18 "Never overwrite the source file; write to a .cleaned.csv copy and ask before replacing."; content treated as data; no permission bypasses; no irrelevant boilerplate. Checks 5, 6 N-A — no `allowed-tools` declared, no embedded install/shell commands. Base 4/4 → 5.0; no adjustment → **5.0**.
@@ -39,22 +42,22 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 | Check | Result | Detail |
 |---|---|---|
 | Skill directory resolved | PASS | `./cleaning-csv-exports/` given by user; contains SKILL.md |
-| Calibration self-check | PASS | Vignette C cold-scored before reading the target; max dimension delta 0.5 |
-| Linter executed | PASS | `npx @jkeskikangas/skillcheck@0.2.4 --format json ./cleaning-csv-exports/` (pinned; cached locally) |
+| Calibration self-check | PASS | Vignette 3 cold-scored from calibration-vignettes.md before opening the answer key; max dimension delta 0.5 |
+| Linter executed | PASS | `npx @jkeskikangas/skillcheck@0.2.4 --format json ./cleaning-csv-exports/` (version-pinned; dependency tree unlocked — disclosed) |
 | Linter diagnostics | PASS | 0 diagnostics |
 | Frontmatter sane | PASS | name matches dir; only `name`/`description` keys |
 | No TODO/TBD placeholders | PASS | searched `TODO`, `TBD`, bracket placeholders |
 | Referenced local files exist | PASS | both `references/` links resolve |
 | No deep reference chains | PASS | neither reference links onward |
 | `agents/openai.yaml` sanity (if present) | SKIP | file not present |
-| Token metrics measured | PASS | description 310 chars; body 132 lines / 918 words; 3 files |
-| Injection scan | PASS | no reviewer-directed instructions found |
+| Token metrics measured | PASS | description 310 chars; body 132 lines / 918 words / ~1221 tokens est; hot-path ~1221 (no unconditionally-read references); 3 files |
+| Injection scan | PASS | no instructions aimed at any reader other than the executing agent; quarantine not needed (first-party source) |
 | Security: symlinks/escapes | PASS | root resolved via `realpath`; `find ./cleaning-csv-exports/ -type l` → none; no `../` traversal in links |
 | Security: executables/binaries | PASS | no executable files or binary blobs |
 | Security: dangerous commands | PASS | no pipe-to-shell or install commands; `pandas` referenced but never installed by the skill |
 | Security: malicious behavior | PASS | no exfiltration, secret-harvesting, or permission-weakening instructions |
 | Security: allowed-tools least privilege | SKIP | `allowed-tools` not declared |
-| Score computed & verdict validated | PASS | `scripts/score.py compute` → 4.15 B; `scripts/score.py validate` → verdict OK |
+| Score computed & verdict validated | PASS | `scripts/score.py compute` → 4.15 B, dimensions object pasted into the verdict; `scripts/score.py validate` → verdict OK |
 
 ## Spec Violations (Blockers)
 
@@ -101,7 +104,7 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 ### P2-2 — Ship eval scenarios with expected outputs
 - **Impact:** No way to verify the skill works after edits; robustness check 3 fails.
 - **Current state:** No eval material anywhere in the skill directory.
-- **Recommendation:** Add `references/evals.md` with 2–3 input/expected-output pairs exercised by the validation step.
+- **Recommendation:** Add `references/evals.md` with 2–3 input/expected-output pairs exercised by the validation step (concrete enough for a third party to check — decorative evals would not count).
 - **Dimension:** robustness_evaluability
 - **Confidence:** High
 - **Patch text (copy/paste):**
@@ -136,17 +139,17 @@ A worked example for a fictional `cleaning-csv-exports` skill. Every section req
 
 ## Dry-Run Simulation
 
-- "Clean this exported `users.csv`" — flows cleanly through steps 1-5; validation step is unambiguous.
-- "My CSV has duplicate rows and broken encodings" — encoding repair is mentioned (SKILL.md:33) but no decision rule for unrecoverable rows: agent must guess drop-vs-flag (drives P2-3).
-- "Clean up my data" (vague) — description would trigger here despite no CSV in sight; confirmed the P2-1 trigger-precision finding.
+- "Clean this exported `users.csv`" — step 1 discover `clean`; step 2 plan `clean`; step 3 execute `clean`; step 4 validate `clean`. Flows end to end; the validation step is unambiguous.
+- "My CSV has duplicate rows and broken encodings" — steps 1-2 `clean`; step 3 encoding repair `guess` (no decision rule for unrecoverable rows — drives P2-3); step 4 `clean`.
+- "Clean up my data" (vague, borderline) — routing `misroute` risk: the description would trigger here despite no CSV in sight (drives P2-1).
 
-## Behavioral Probe (opt-in; include when run)
+## Behavioral Probe (include when run)
 
-Not requested for this review; offered to the user as a follow-up (workflow probe + 5/5 trigger battery).
+Not run; the bar is not being claimed (weighted 4.15 with one P1), so no skip reason is required. Because the bar is not claimed, the default lightweight probe was deferred and recorded as a follow-up rather than blocking the report. Domain/outcome correctness was therefore not assessed (maintenance note above). Offered to the user as a follow-up: workflow probe (judging result correctness, not just flow) plus a 10+10 trigger battery (forced choice against the sibling import/export skill descriptions).
 
 ## Token Efficiency
 
-- **Measured:** description 310 chars; SKILL.md body 132 lines / 918 words (from verification metrics).
+- **Measured:** description 310 chars; SKILL.md body 132 lines / 918 words / ~1221 tokens est; hot-path ~1221 (from verification metrics).
 - **Bloat:** Inline example block (SKILL.md:55-96) duplicates a reference file.
 - **Densify:** Steps 2-3 prose can collapse into the existing numbered list.
 - **Progressive disclosure:** Encoding-repair details belong in `references/encoding.md`.
@@ -173,30 +176,79 @@ Included because a P1 exists and weighted score < 4.5.
 
 ```json
 {
-  "verdict_schema_version": "2.1",
-  "rubric_version": "2.1",
+  "verdict_schema_version": "2.3",
+  "rubric_version": "2.3",
   "skill": "./cleaning-csv-exports/",
   "archetype": "workflow",
+  "invocation_model": "dispatched",
   "review_mode": "single",
   "review_depth": "full",
+  "independence": "inline",
   "probe_run": false,
+  "probe_skip_reason": null,
   "reviewed_commit": "3f9c2ab",
+  "base_verdict_commit": null,
   "reviewer_model": "claude-fable-5",
+  "reviewer_models": null,
   "weighted_score": 4.15,
   "grade": "B",
   "dimensions": {
-    "spec_compliance": 4.5,
-    "trigger_precision": 3.5,
-    "workflow_quality": 4.0,
-    "token_efficiency": 4.0,
-    "safety": 5.0,
-    "robustness_evaluability": 3.5,
-    "portability": 4.5
+    "spec_compliance": {
+      "score": 4.5,
+      "checks": ["PASS", "PASS", "PASS", "PASS", "FAIL", "PASS", "PASS", "PASS"],
+      "adjustment": 0,
+      "adjustment_note": null,
+      "cap": null
+    },
+    "trigger_precision": {
+      "score": 3.5,
+      "checks": ["PASS", "FAIL", "PASS", "PARTIAL"],
+      "adjustment": 0,
+      "adjustment_note": null,
+      "cap": null
+    },
+    "workflow_quality": {
+      "score": 4.0,
+      "checks": ["PASS", "PARTIAL", "PASS", "PASS", "FAIL", "PASS"],
+      "adjustment": 0,
+      "adjustment_note": null,
+      "cap": null
+    },
+    "token_efficiency": {
+      "score": 4.0,
+      "checks": ["PASS", "PARTIAL", "PASS", "FAIL", "PASS"],
+      "adjustment": 0,
+      "adjustment_note": null,
+      "cap": null
+    },
+    "safety": {
+      "score": 5.0,
+      "checks": ["PASS", "PASS", "PASS", "PASS", "N-A", "N-A"],
+      "adjustment": 0,
+      "adjustment_note": null,
+      "cap": null
+    },
+    "robustness_evaluability": {
+      "score": 3.5,
+      "checks": ["PASS", "PARTIAL", "FAIL", "N-A", "PASS"],
+      "adjustment": 0,
+      "adjustment_note": null,
+      "cap": null
+    },
+    "portability": {
+      "score": 4.5,
+      "checks": ["PARTIAL", "N-A", "PASS", "PASS"],
+      "adjustment": 0,
+      "adjustment_note": null,
+      "cap": null
+    }
   },
   "metrics": {
     "description_chars": 310,
     "skill_md_body_lines": 132,
     "skill_md_body_words": 918,
+    "skill_md_tokens_est": 1221,
+    "hot_path_tokens_est": 1221,
     "file_count": 3
   },
   "blockers": [],
@@ -231,7 +283,7 @@ Included because a P1 exists and weighted score < 4.5.
       "title": "Ship eval scenarios with expected outputs",
       "file": "references/evals.md",
       "lines": "",
-      "summary": "No way to verify the skill works after edits; add 2-3 input/expected-output pairs.",
+      "summary": "No way to verify the skill works after edits; add 2-3 verifiable input/expected-output pairs.",
       "patch": "Create references/evals.md with input/expected-output pairs exercised by the validation step.",
       "dimension": "robustness_evaluability",
       "support": null,
@@ -262,6 +314,7 @@ Included because a P1 exists and weighted score < 4.5.
       "confidence": "High"
     }
   ],
+  "maintenance_notes": ["Domain/outcome correctness not assessed — probe not run; grade is form-only."],
   "p1_count": 1,
   "p2_count": 3,
   "p3_count": 1,

@@ -1,4 +1,4 @@
 interface:
   display_name: "Writing Skills"
   short_description: "Create professional-grade agent skills"
-  default_prompt: "Use $writing-skills to create or update the skill in ./path/to/skill and iterate with $reviewing-skills until it reaches an A grade (weighted >= 4.5, no P1 findings), or reports why it fell short."
+  default_prompt: "Use $writing-skills to create or update the skill in ./path/to/skill and iterate with $reviewing-skills until it meets the rubric's canonical bar (defined in reviewing-skills/references/skills-rubric.md), or reports why it fell short."

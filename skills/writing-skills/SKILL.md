@@ -6,7 +6,7 @@ description: >
   want to refactor an existing skill for clarity/token-efficiency, or want to reach an A-grade rubric score.
   Not for reviewing or grading a skill (use reviewing-skills), or for authoring rubrics (writing-rubrics),
   specs (writing-specs), designs (writing-designs), or AGENTS.md (writing-agents-md).
-allowed-tools: Read, Write, Edit, Glob, Grep, Task, Bash(node:*), Bash(npm:*), Bash(npx:*), Bash(git:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Task, Bash(node:*), Bash(npm:*), Bash(npx:*), Bash(git diff:*), Bash(git log:*), Bash(git rev-parse:*), Bash(git status:*)
 ---
 
 # Writing Skills
@@ -181,7 +181,7 @@ Fix what is fixable inline; flag what needs re-analysis or user input. Then go t
 
 Run `$reviewing-skills` in a **fresh context** (its scores are blind only without your authoring context):
 - If your environment supports subagents, **spawn a fresh-context subagent** and give it the skill path.
-- **Held-out signal (do not tune to the rubric):** before declaring the gate met, run at least one fresh adversarial probe *not derived from the rubric or its vignettes* — a novel in-the-wild request the skill was not written against — and weight a failure there above the weighted score (`$reviewing-skills` applies the matching held-out rule from its side). Never treat the canonical vignettes as authoring targets.
+- **Held-out signal (critic-owned; you never see the probe):** the held-out probe is synthesized and run by `$reviewing-skills` in its fresh context, not by you — you request the gate, you do not author, read, select, or get shown the probes (the protocol lives in `reviewing-skills/references/holdout-probes.md`; it is the critic's, not an authoring target). The critic returns only a pass/fail and a **redacted symptom** for any failure; fix the **skill** against that symptom — you cannot tune to the probe because you never see one. A held-out FAIL arrives as a P1 finding and is therefore below-bar regardless of the weighted score. Never treat the rubric or its canonical vignettes as authoring targets.
 - **Independence guard — claiming the bar needs a fresh context.** If you must run `$reviewing-skills` *inline* (no subagent) or *self-review* (critic unavailable), the verdict is author-contaminated: you may **not** assert `meets_bar` / "professional-grade". Mark the result `bar-unclaimed`, list which independence guarantees degraded, and recommend a separate-session review.
 - If the skill is git-tracked and you changed it, require the critic to cite the relevant diff hunk or commit short-hash for any change-driven P1/P2 findings.
 

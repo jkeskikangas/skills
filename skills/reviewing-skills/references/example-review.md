@@ -176,8 +176,8 @@ Included because a P1 exists and weighted score < 4.5.
 
 ```json
 {
-  "verdict_schema_version": "2.3",
-  "rubric_version": "2.3",
+  "verdict_schema_version": "2.4",
+  "rubric_version": "2.4",
   "skill": "./cleaning-csv-exports/",
   "archetype": "workflow",
   "invocation_model": "dispatched",

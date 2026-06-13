@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "reviewing-skills machine-readable verdict (schema 2.3)",
-  "description": "Informative JSON Schema for the verdict block that closes every review. scripts/score.py validate is the canonical validator: it additionally enforces cross-field rules this schema cannot express (dimension scores recomputed from checks and optional caps, weighted score from archetype weights, expected per-dimension check counts, finding-count consistency, meets_bar consistency including the band-edge ensemble rule, and depth- and mode-conditional requirements).",
+  "title": "reviewing-skills machine-readable verdict (schema 2.4)",
+  "description": "Informative JSON Schema for the verdict block that closes every review. scripts/score.py validate is the canonical validator: it additionally enforces cross-field rules this schema cannot express (dimension scores recomputed from checks and the enforced critical-check cap, weighted score from archetype weights, expected per-dimension check counts, finding-count consistency, meets_bar consistency including the gate-fragility ensemble rule, and depth- and mode-conditional requirements).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,7 +12,7 @@
     "maintenance_notes", "p1_count", "p2_count", "p3_count", "meets_bar"
   ],
   "properties": {
-    "verdict_schema_version": {"const": "2.3"},
+    "verdict_schema_version": {"const": "2.4"},
     "rubric_version": {"type": "string"},
     "skill": {"type": "string", "minLength": 1},
     "archetype": {"enum": ["workflow", "reference", "tool-wrapper", "orchestrator"]},

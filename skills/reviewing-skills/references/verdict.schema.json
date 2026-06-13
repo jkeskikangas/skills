@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "reviewing-skills machine-readable verdict (schema 2.3)",
+  "description": "Informative JSON Schema for the verdict block that closes every review. scripts/score.py validate is the canonical validator: it additionally enforces cross-field rules this schema cannot express (dimension scores recomputed from checks and optional caps, weighted score from archetype weights, expected per-dimension check counts, finding-count consistency, meets_bar consistency including the band-edge ensemble rule, and depth- and mode-conditional requirements).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verdict_schema_version", "rubric_version", "skill", "archetype", "invocation_model",
+    "review_mode", "review_depth", "independence", "probe_run", "probe_skip_reason",
+    "reviewed_commit", "base_verdict_commit", "reviewer_model", "reviewer_models",
+    "weighted_score", "grade", "dimensions", "metrics", "blockers", "findings",
+    "maintenance_notes", "p1_count", "p2_count", "p3_count", "meets_bar"
+  ],
+  "properties": {
+    "verdict_schema_version": {"const": "2.3"},
+    "rubric_version": {"type": "string"},
+    "skill": {"type": "string", "minLength": 1},
+    "archetype": {"enum": ["workflow", "reference", "tool-wrapper", "orchestrator"]},
+    "invocation_model": {"enum": ["dispatched", "user-invoked", "both"]},
+    "review_mode": {"enum": ["single", "batch", "comparative", "forensic", "ensemble"]},
+    "review_depth": {"enum": ["full", "triage", "incremental"]},
+    "independence": {"enum": ["fresh-context", "inline"]},
+    "probe_run": {"type": "boolean"},
+    "probe_skip_reason": {"type": ["string", "null"]},
+    "reviewed_commit": {"type": ["string", "null"]},
+    "base_verdict_commit": {"type": ["string", "null"]},
+    "reviewer_model": {"type": ["string", "null"]},
+    "reviewer_models": {
+      "type": ["array", "null"],
+      "items": {"type": "string", "minLength": 1},
+      "minItems": 3
+    },
+    "weighted_score": {"type": ["number", "null"], "minimum": 1.0, "maximum": 5.0},
+    "grade": {"enum": ["A", "B", "C", "D", "F", null]},
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spec_compliance", "trigger_precision", "workflow_quality", "token_efficiency",
+        "safety", "robustness_evaluability", "portability"
+      ],
+      "properties": {
+        "spec_compliance": {"$ref": "#/$defs/dimensionOrNull"},
+        "trigger_precision": {"$ref": "#/$defs/dimensionOrNull"},
+        "workflow_quality": {"$ref": "#/$defs/dimensionOrNull"},
+        "token_efficiency": {"$ref": "#/$defs/dimensionOrNull"},
+        "safety": {"$ref": "#/$defs/dimensionOrNull"},
+        "robustness_evaluability": {"$ref": "#/$defs/dimensionOrNull"},
+        "portability": {"$ref": "#/$defs/dimensionOrNull"}
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description_chars", "skill_md_body_lines", "skill_md_body_words",
+        "skill_md_tokens_est", "hot_path_tokens_est", "file_count"
+      ],
+      "properties": {
+        "description_chars": {"type": ["integer", "null"], "minimum": 0},
+        "skill_md_body_lines": {"type": ["integer", "null"], "minimum": 0},
+        "skill_md_body_words": {"type": ["integer", "null"], "minimum": 0},
+        "skill_md_tokens_est": {"type": ["integer", "null"], "minimum": 0},
+        "hot_path_tokens_est": {"type": ["integer", "null"], "minimum": 0},
+        "file_count": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["registry_item", "summary", "finding_id"],
+        "properties": {
+          "registry_item": {"type": "integer", "minimum": 1, "maximum": 7},
+          "summary": {"type": "string", "minLength": 1},
+          "finding_id": {"type": "string", "pattern": "^P1-[0-9]+$"}
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "priority", "title", "file", "lines", "summary", "patch", "dimension", "support", "confidence"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^P[123]-[0-9]+$"},
+          "priority": {"enum": ["P1", "P2", "P3"]},
+          "title": {"type": "string", "minLength": 1},
+          "file": {"type": "string"},
+          "lines": {"type": "string"},
+          "summary": {"type": "string"},
+          "patch": {"type": "string"},
+          "dimension": {
+            "enum": [
+              "spec_compliance", "trigger_precision", "workflow_quality", "token_efficiency",
+              "safety", "robustness_evaluability", "portability", null
+            ]
+          },
+          "support": {"type": ["integer", "null"], "minimum": 1},
+          "confidence": {"enum": ["High", "Medium", "Low"]}
+        }
+      }
+    },
+    "maintenance_notes": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "p1_count": {"type": "integer", "minimum": 0},
+    "p2_count": {"type": "integer", "minimum": 0},
+    "p3_count": {"type": "integer", "minimum": 0},
+    "meets_bar": {"type": "boolean"}
+  },
+  "$defs": {
+    "dimensionOrNull": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["score", "checks", "adjustment", "adjustment_note"],
+          "properties": {
+            "score": {"type": "number", "minimum": 1.0, "maximum": 5.0},
+            "checks": {
+              "type": "array",
+              "items": {"enum": ["PASS", "PARTIAL", "FAIL", "N-A"]},
+              "minItems": 4,
+              "maxItems": 8
+            },
+            "adjustment": {"type": "number", "minimum": -0.5, "maximum": 0.5},
+            "adjustment_note": {"type": ["string", "null"]},
+            "cap": {"type": ["number", "null"], "minimum": 1.0, "maximum": 5.0}
+          }
+        }
+      ]
+    }
+  }
+}

@@ -7,9 +7,13 @@ Subcommands:
                                           only, in rubric order; per-dimension check counts are
                                           enforced. Flags band-edge uncertainty.
   validate       <verdict.json>           Validate a final machine-readable verdict block
-                                          (schema 2.3). Recomputes every dimension score from
+                                          (schema 2.4). Recomputes every dimension score from
                                           its embedded checks (and optional cap) and the
-                                          weighted score from the archetype weights.
+                                          weighted score from the archetype weights. Enforces
+                                          the critical-check cap (a FAIL on a *(critical)* check
+                                          requires cap <= 3.0) and the gate-fragility rule (a
+                                          band-flippable meets_bar at the 4.5 gate requires
+                                          ensemble mode).
   validate-fleet <fleet.json>             Validate a batch-mode fleet summary (fleet schema 1.0).
   verify-evidence <verdict.json> <dir>    Re-ground each finding against the reviewed skill at
                                           <dir>: cited file exists, line range is in range, and
@@ -31,12 +35,16 @@ compute input format:
     }
   }
 
-A dimension's optional "cap" (1.0-5.0) bounds its final score: a FAIL on a rubric *(critical)*
-check caps the dimension at 3.0, and a measured trigger battery caps Dimension 2 (rubric
-Dimension 2). final = min(cap, base + adjustment). A cap is not a holistic adjustment and is
-exempt from the net-adjustment limit.
+A dimension's "cap" (1.0-5.0) bounds its final score: final = min(cap, base + adjustment).
+A cap is not a holistic adjustment and is exempt from the net-adjustment limit. There are two
+sources, composed by min(): (1) the *(critical)*-check cap of 3.0, which `compute` applies and
+`validate` enforces automatically from the check verdicts (Dim2 c1, Dim5 c4, Dim6 c2) — the
+reviewer no longer has to remember it; (2) a reviewer-supplied cap, e.g. the measured
+trigger-battery routing cap on Dimension 2.
 
-compute output includes a paste-ready "dimensions" object for the verdict block.
+compute output includes a paste-ready "dimensions" object for the verdict block, plus a
+"band_stability" report (does any single one-level check flip change the grade band / drop the
+score below the 4.5 gate). A meets_bar claim that is gate-fragile requires ensemble mode.
 
 Exit codes: 0 = OK (warnings go to stderr), 1 = validation failure, 2 = usage or input error.
 """
@@ -57,7 +65,7 @@ DIMENSIONS = [
     "portability",
 ]
 
-# Non-advisory checks per dimension, per rubric 2.3. Advisory checks are excluded.
+# Non-advisory checks per dimension, per rubric 2.4. Advisory checks are excluded.
 EXPECTED_CHECKS = {
     "spec_compliance": 8,
     "trigger_precision": 4,
@@ -90,14 +98,26 @@ METRIC_KEYS = (
     "hot_path_tokens_est",
     "file_count",
 )
-SCHEMA_VERSION = "2.3"
-RUBRIC_VERSIONS = {"2.3"}
+SCHEMA_VERSION = "2.4"
+RUBRIC_VERSIONS = {"2.4"}
 FLEET_SCHEMA_VERSION = "1.0"
 NET_ADJUSTMENT_CAP = 0.15   # |sum(weight_i * adj_i)| / 100 must not exceed this
 DIMENSION_FLOOR = 3.5       # meets_bar requires every dimension final >= this
+GATE = 4.5                  # weighted-score gate for an A / meets_bar
 BAND_EDGES = (1.5, 2.5, 3.5, 4.5)   # grade-band boundaries
-BAND_EDGE_TOL = 0.05        # within this of a boundary => band-uncertain
-GATE_EDGE_HI = 4.55         # meets_bar in [4.5, 4.55) is band-uncertain at the gate
+BAND_EDGE_TOL = 0.05        # within this of a boundary => band-uncertain (informational)
+CRITICAL_CAP = 3.0          # a FAIL on a *(critical)* check caps its dimension's final here
+
+# 0-based positions of the *(critical)* checks within each dimension's non-advisory check
+# list (rubric 2.4): Dim2 c1 (strong positive trigger), Dim5 c4 (no-bypass / treats content
+# as data), Dim6 c2 (success verifiable). The scorer enforces the cap from the check verdicts
+# themselves, so it no longer depends on the reviewer remembering to supply `cap`.
+CRITICAL = {
+    "trigger_precision": (0,),
+    "safety": (3,),
+    "robustness_evaluability": (1,),
+}
+ONE_LEVEL = {"PASS": ("PARTIAL",), "PARTIAL": ("PASS", "FAIL"), "FAIL": ("PARTIAL",)}
 
 
 def half_step(x):
@@ -125,6 +145,78 @@ def band(weighted):
 def band_uncertain(weighted):
     """True when the weighted score sits within BAND_EDGE_TOL of any grade-band boundary."""
     return any(abs(weighted - e) <= BAND_EDGE_TOL + 1e-9 for e in BAND_EDGES)
+
+
+def critical_cap(key, checks):
+    """CRITICAL_CAP if any *(critical)* check in this dimension is FAIL, else None (rubric 2.4).
+
+    Derived from the check verdicts, so a critical FAIL caps the dimension even when the
+    reviewer forgot to supply `cap`."""
+    return CRITICAL_CAP if any(
+        i < len(checks) and checks[i] == "FAIL" for i in CRITICAL.get(key, ())
+    ) else None
+
+
+def effective_cap(supplied, key, checks):
+    """Compose the reviewer-supplied cap (routing cap, etc.) with the enforced critical cap."""
+    caps = [c for c in (supplied, critical_cap(key, checks)) if c is not None]
+    return min(caps) if caps else None
+
+
+def dim_final(key, checks, adj, supplied_cap):
+    """Final score for one dimension: base (half-step) + adjustment, clamped, then capped."""
+    na = checks.count("N-A")
+    applicable = len(checks) - na
+    if applicable == 0:
+        return None
+    base = half_step(1 + 4 * (checks.count("PASS") + 0.5 * checks.count("PARTIAL")) / applicable)
+    final = min(5.0, max(1.0, base + adj))
+    ec = effective_cap(supplied_cap, key, checks)
+    if ec is not None:
+        final = min(final, ec)
+    return final
+
+
+def weighted_from(archetype, dim_checks, dim_adj, dim_cap):
+    """Recompute the weighted score from per-dimension checks/adjustments/supplied caps."""
+    raw = Decimal("0")
+    for key, weight in zip(DIMENSIONS, WEIGHTS[archetype]):
+        raw += Decimal(str(weight)) * Decimal(str(
+            dim_final(key, dim_checks[key], dim_adj.get(key, 0), dim_cap.get(key))))
+    return two_dec(raw / 100)
+
+
+def band_stability(archetype, dim_checks, dim_adj, dim_cap, weighted):
+    """Perturb each applicable check by one level (PASS<->PARTIAL<->FAIL) and recompute.
+
+    Reports whether any single flip changes the grade band, and — for a gate claim — whether
+    any single flip drops the weighted score below the 4.5 gate (gate_fragile). Critical caps
+    are re-derived per trial, so a flip that clears or trips a critical FAIL is reflected."""
+    base_band = band(weighted)
+    flips = band_changes = 0
+    min_w, max_w = weighted, weighted
+    gate_fragile = False
+    for key in DIMENSIONS:
+        checks = dim_checks[key]
+        for i, c in enumerate(checks):
+            for nb in ONE_LEVEL.get(c, ()):
+                trial = dict(dim_checks)
+                trial[key] = checks[:i] + [nb] + checks[i + 1:]
+                w = weighted_from(archetype, trial, dim_adj, dim_cap)
+                flips += 1
+                min_w, max_w = min(min_w, w), max(max_w, w)
+                if band(w) != base_band:
+                    band_changes += 1
+                if weighted >= GATE and w < GATE:
+                    gate_fragile = True
+    return {
+        "flips_tested": flips,
+        "flips_that_change_band": band_changes,
+        "band_stable": band_changes == 0,
+        "gate_fragile": gate_fragile,
+        "min_under_one_flip": min_w,
+        "max_under_one_flip": max_w,
+    }
 
 
 def is_num(x):
@@ -215,6 +307,7 @@ def compute(path):
 
     errors, warnings = [], []
     verdict_dims, detail = {}, {}
+    all_checks, all_adj, all_cap = {}, {}, {}   # supplied caps, for the stability recompute
     weighted_raw = net_adj_raw = Decimal("0")
     for key, weight in zip(DIMENSIONS, WEIGHTS[archetype]):
         spec = dims[key]
@@ -228,17 +321,22 @@ def compute(path):
             continue
         checks, base, applicable, na = based
         adj, note = adjusted
+        eff_cap = effective_cap(cap, key, checks)   # enforced critical cap composed with supplied
         final = min(5.0, max(1.0, base + adj))
-        if cap is not None:
-            final = min(final, cap)
+        if eff_cap is not None:
+            final = min(final, eff_cap)
+        if eff_cap is not None and eff_cap != cap:
+            warnings.append(f"{key}: a FAIL on a *(critical)* check enforces cap {eff_cap} "
+                            "(applied automatically; rubric 2.4)")
         if na > len(checks) / 2:
             warnings.append(f"{key}: {na}/{len(checks)} checks are N-A — flag this dimension as low-signal in the report")
+        all_checks[key], all_adj[key], all_cap[key] = checks, adj, cap
         verdict_dims[key] = {"score": final, "checks": checks, "adjustment": adj,
-                             "adjustment_note": note, "cap": cap}
+                             "adjustment_note": note, "cap": eff_cap}
         detail[key] = {
             "weight": weight,
             "base": base,
-            "cap": cap,
+            "cap": eff_cap,
             "final": final,
             "applicable": applicable,
             "na": na,
@@ -258,9 +356,14 @@ def compute(path):
 
     weighted = two_dec(weighted_raw / 100)
     uncertain = band_uncertain(weighted)
-    if uncertain:
-        warnings.append(f"weighted score {weighted} is within {BAND_EDGE_TOL} of a grade-band edge — "
-                        "band-uncertain; a meets_bar claim this close to the 4.5 gate requires ensemble mode")
+    stability = band_stability(archetype, all_checks, all_adj, all_cap, weighted)
+    if stability["gate_fragile"]:
+        warnings.append(f"weighted score {weighted} is gate-fragile: a single one-level check flip "
+                        f"drops it to {stability['min_under_one_flip']} (< {GATE}). A meets_bar claim "
+                        "requires ensemble mode (validate-enforced).")
+    elif uncertain:
+        warnings.append(f"weighted score {weighted} is within {BAND_EDGE_TOL} of a grade-band edge "
+                        "(band-uncertain) — report the flag, though it does not by itself force ensemble.")
     result = {
         "archetype": archetype,
         "dimensions": verdict_dims,   # paste-ready for the verdict block
@@ -270,6 +373,7 @@ def compute(path):
         "weighted_score": weighted,
         "grade": band(weighted),
         "band_uncertain": uncertain,
+        "band_stability": stability,
         "warnings": warnings,
     }
     for w in warnings:
@@ -419,6 +523,7 @@ def validate(path):
             errors.append("triage verdicts can never set meets_bar true")
     else:  # full or incremental: recompute everything from the embedded checks
         scores = {}
+        all_checks, all_adj, all_cap = {}, {}, {}   # supplied caps, for the stability recompute
         weighted_raw = net_adj_raw = Decimal("0")
         weights = WEIGHTS.get(archetype)
         for key, weight in zip(DIMENSIONS, weights or [0] * 7):
@@ -433,19 +538,26 @@ def validate(path):
             ok_cap, cap = read_cap(key, spec, errors)
             if based is None or adjusted is None or not ok_cap:
                 continue
-            _, base, _, _ = based
+            checks, base, _, _ = based
             adj, _ = adjusted
+            ccap = critical_cap(key, checks)
+            if ccap is not None and (cap is None or cap > ccap + 1e-9):
+                errors.append(f"dimensions.{key}: a FAIL on a *(critical)* check requires cap <= {ccap} "
+                              f"in the verdict (got {cap!r}); the critical-check cap is not optional (rubric 2.4)")
+            eff_cap = effective_cap(cap, key, checks)
             expected_final = min(5.0, max(1.0, base + adj))
-            if cap is not None:
-                expected_final = min(expected_final, cap)
+            if eff_cap is not None:
+                expected_final = min(expected_final, eff_cap)
             score = spec.get("score")
             if not is_num(score):
                 errors.append(f"dimensions.{key}.score must be a number")
             elif abs(score - expected_final) > 1e-9:
-                errors.append(f"dimensions.{key}.score {score} does not match its checks: "
-                              f"base {base} with adjustment {adj:+g} -> {expected_final}")
+                errors.append(f"dimensions.{key}.score {score} does not match its checks: base {base} "
+                              f"with adjustment {adj:+g}"
+                              f"{f', capped at {eff_cap}' if eff_cap is not None else ''} -> {expected_final}")
             else:
                 scores[key] = score
+                all_checks[key], all_adj[key], all_cap[key] = checks, adj, cap
                 if weights:
                     weighted_raw += Decimal(str(weight)) * Decimal(str(score))
                     net_adj_raw += Decimal(str(weight)) * Decimal(str(adj))
@@ -465,13 +577,16 @@ def validate(path):
                 errors.append("incremental verdicts can never set meets_bar true — gates require a fresh full review")
             if depth == "full" and is_num(ws) and isinstance(meets, bool):
                 probe_ok = bool(probe_run) or bool(skip_reason and str(skip_reason).strip())
-                expected = (ws >= 4.5 and counts["P1"] == 0 and not blockers
+                expected = (ws >= GATE and counts["P1"] == 0 and not blockers
                             and min(scores.values()) >= DIMENSION_FLOOR and probe_ok)
-                if expected and 4.5 <= ws < GATE_EDGE_HI and mode != "ensemble":
-                    errors.append(
-                        f"meets_bar at a band-uncertain weighted_score ({ws} is within {BAND_EDGE_TOL} above the "
-                        "4.5 gate) requires ensemble mode (3 independent reviews); run an ensemble or do not claim the bar")
-                    expected = False
+                if expected and len(scores) == len(DIMENSIONS):
+                    stab = band_stability(archetype, all_checks, all_adj, all_cap, ws)
+                    if stab["gate_fragile"] and mode != "ensemble":
+                        errors.append(
+                            f"meets_bar at a gate-fragile weighted_score ({ws}: a single one-level check flip "
+                            f"drops it to {stab['min_under_one_flip']} < {GATE}) requires ensemble mode "
+                            "(3 independent reviews); run an ensemble or do not claim the bar")
+                        expected = False
                 if meets != expected:
                     errors.append(
                         f"meets_bar={meets} is inconsistent (weighted_score {ws}, p1_count {counts['P1']}, "

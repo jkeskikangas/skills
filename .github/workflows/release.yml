@@ -34,6 +34,14 @@ jobs:
         run: npm test
         working-directory: packages/skillcheck
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run scorer tests (reviewing-skills)
+        run: python skills/reviewing-skills/scripts/score_test.py
+
       - name: Validate all skills and rubrics (skillcheck)
         run: node packages/skillcheck/bin/skillcheck.js skills/
 

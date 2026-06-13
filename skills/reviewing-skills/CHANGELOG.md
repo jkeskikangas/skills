@@ -1,5 +1,26 @@
 # Changelog — reviewing-skills
 
+## 2.4 (2026-06-13) — rubric 2.4, verdict schema 2.4
+
+Scorer-enforcement and reliability pass. Closes the gap between what the rubric *claimed* the deterministic scorer enforced and what it actually checked.
+
+**Enforced critical-check caps**
+- The *(critical)*-check cap (Dim2 c1, Dim5 c4, Dim6 c2) is now derived from the check verdicts by `score.py`: `compute` applies the 3.0 cap automatically and `validate` rejects any verdict that FAILs a critical check without `cap ≤ 3.0`. Previously the cap depended on the reviewer remembering to supply it, so a critical FAIL with the `cap` field omitted validated clean — e.g. an un-triggerable skill (Dim2 c1 FAIL) reaching `meets_bar` at weighted 4.85. Canonical vignette scores are unchanged (every critical-FAIL dimension already sat at ≤ 3.0).
+
+**Reliability-aware gate (band-stability)**
+- `compute` reports `band_stability`: whether any single one-level check flip (PASS↔PARTIAL↔FAIL, critical caps re-derived per flip) changes the grade band or drops the score below the 4.5 gate (`gate_fragile`). A `meets_bar: true` that is gate-fragile now requires ensemble mode (`validate`-enforced). This replaces rubric 2.3's fixed `[4.5, 4.55)` band-uncertain window — which disagreed with the `band_uncertain` flag at exactly 4.55 — with fragility measured from the actual check set, so it also catches a 4.70 one flip would send below 4.5.
+
+**Domain-correctness gate strengthened**
+- A gate-grade correctness probe must cover ≥3 representative tasks and, where available, run on a different model than the scorer; a single same-model dry-run may not assert correctness (it shares the scorer's blind spots).
+
+**Tests, integrity & loop**
+- New `scripts/score_test.py` (stdlib unittest): the seven canonical vignettes, band edges, enforced caps, gate-fragility, the non-compensatory floor, the net-adjustment cap, and depth/null rules — the automated regression net the manual cold-score protocol stood in for. Wired into CI alongside a guard that the rubric's first-party linter pin resolves on the registry.
+- Published `@jkeskikangas/skillcheck@0.2.4` so the pinned `npx @jkeskikangas/skillcheck@0.2.4` resolves in a clean environment (it previously 404'd; only 0.1.0/0.2.1 were live).
+- Generator↔critic loops: added a held-out-adversarial-signal rule (the rubric and vignettes are visible to the generator, so a gate needs a fresh probe the generator was not tuned on). Inline (no-subagent) runs now list which independence guarantees degraded.
+
+**Calibration**
+- Vignette 7's trigger derivation corrected to score check 4 as N-A (no visible siblings) per Dimension 2 — uncapped base 3.5, capped to 3.0; the canonical 3.55 (band-uncertain) is unchanged. The regression protocol now also reproduces `band_stability` / gate-fragility and runs `score_test.py`.
+
 ## 2.3 (2026-06-13) — rubric 2.3, verdict schema 2.3
 
 Reproducibility, coverage, and anti-gaming pass. Targets the gaps that let two reviewers diverge or let a polished-but-bad skill pass.
@@ -46,7 +67,7 @@ Reproducibility, coverage, and anti-gaming pass. Targets the gaps that let two r
 - New verdict fields: `invocation_model`, `independence`, `probe_skip_reason`, `base_verdict_commit`, `reviewer_models` (ensemble jury), `maintenance_notes`; `blockers` are structured objects (`registry_item` + `finding_id`). New `validate-fleet` subcommand; informative JSON Schema at `references/verdict.schema.json` (score.py remains canonical).
 - New edge cases: target skill loaded in the current session / self-review (fresh-context delegation + asymmetric evidence), nested/plugin-namespaced skills, post-compaction recalibration.
 - Report budget (~350 lines excluding the verdict) and structured dry-run traces (clean / stall / guess / misroute per step).
-- `reviewed_commit` gains a `-dirty` marker for uncommitted working trees; incremental depth requires a clean `base_verdict_commit` (found by the post-bump fresh-context self-review smoke test, which scored the 2.2 stack A 4.93 with no blockers).
+- `reviewed_commit` gains a `-dirty` marker for uncommitted working trees; incremental depth requires a clean `base_verdict_commit` (found by the post-bump fresh-context self-review smoke test, which scored the 2.2 stack A 4.93 with no blockers — a self-consistency check only, never evidence of rubric validity; see the self-review asymmetry in SKILL.md Edge cases).
 
 ## 2.1
 

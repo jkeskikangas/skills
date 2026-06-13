@@ -34,6 +34,22 @@ jobs:
         run: npm test
         working-directory: packages/skillcheck
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run scorer tests (reviewing-skills)
+        run: python skills/reviewing-skills/scripts/score_test.py
+
+      - name: Verify rubric linter pin resolves
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          PIN=$(grep -oE '@jkeskikangas/skillcheck@[0-9]+\.[0-9]+\.[0-9]+' skills/reviewing-skills/references/skills-rubric.md | head -1)
+          echo "Pinned linter: $PIN"
+          npm view "$PIN" version
+
       - name: Validate all skills and rubrics (skillcheck)
         run: node packages/skillcheck/bin/skillcheck.js skills/
 
